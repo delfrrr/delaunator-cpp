@@ -9,3 +9,5 @@ compile_commands.json
 CTestTestfile.cmake
 .vscode
 build
+includes
+.DS_Store
