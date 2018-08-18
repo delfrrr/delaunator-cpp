@@ -22,6 +22,15 @@ std::string read_file(const char* filename) {
 int main(int, char* argv[]) {
     const char* filename = argv[1];
     std::string json = read_file(filename);
-    // std::printf("%s\n", json.c_str());
-    // std::printf("%s", json.c_str());
+    rapidjson::Document document;
+    if(document.Parse(json.c_str()).HasParseError()) {
+        std::fprintf(stderr, "Cannot parse JSON");
+        throw std::exception();
+    }
+    if(document.HasMember("features")) {
+        const rapidjson::Value& features = document["features"];
+        for(rapidjson::SizeType i = 0; i < features.Size(); i++) {
+            std::printf("feature");
+        }
+    }
 }
