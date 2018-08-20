@@ -1,6 +1,9 @@
 #pragma once
+#include <vector>
 
-class Delaunator {
-    template<int N>
-    Delaunator(const double (&coords)[N]);
+using namespace std;
+
+class Delaunator{
+    public:
+    Delaunator(const vector<double> &coords);
 };
