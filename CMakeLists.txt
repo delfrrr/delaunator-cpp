@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(delaunator VERSION 0.1.0)
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 17)
 if (NOT EXISTS "${PROJECT_SOURCE_DIR}/includes")
     execute_process(COMMAND bash "-c" "(cd ${PROJECT_SOURCE_DIR} && ./fetch-includes.sh)")
 endif()
