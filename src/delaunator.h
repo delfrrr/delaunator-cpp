@@ -13,6 +13,8 @@ class Delaunator{
             };
         };
     private:
-        double center_x;
-        double center_y;
+        double m_center_x;
+        double m_center_y;
+        double m_hash_size;
+        vector<int> m_hash;
 };

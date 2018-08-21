@@ -4,6 +4,7 @@
 #include <limits>
 #include <tuple>
 #include <exception>
+#include <cmath>
 
 using namespace std;
 
@@ -164,6 +165,13 @@ namespace {
         }
         printf("]\n");
     }
+    void print_array(const vector<int> &v) {
+        printf("[");
+        for (int i = 0; i < v.size(); i++) {
+            printf("%d, ", v[i]);
+        }
+        printf("]\n");
+    }
 }
 
 Delaunator::Delaunator(const vector<double> &coords) {
@@ -255,11 +263,17 @@ Delaunator::Delaunator(const vector<double> &coords) {
     const double i2x = coords[2 * i2];
     const double i2y = coords[2 * i2 + 1];
 
-    tie(center_x, center_y) = circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
-    // [cx, cy) = center;
-    print_array(ids, n);
-    quicksort(ids, coords, 0, n - 1, center_x, center_y);
-    print_array(ids, n);
+    tie(m_center_x, m_center_y) = circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
 
+    // sort the points by distance from the seed triangle circumcenter
+    quicksort(ids, coords, 0, n - 1, m_center_x, m_center_y);
+    // print_array(ids, n);
+
+    m_hash_size = ceil(sqrt(n));
+    m_hash.reserve(m_hash_size);
+    for (int i = 0; i < m_hash_size; i++) m_hash.push_back(-1);
+    print_array(m_hash);
+    // printf("isnan(m_hash[0])=%d\n", isnan(m_hash[0]));
+    printf("m_hash[1]=%d\n", m_hash[1]);
     // printf("i0x=%f i0y=%f", i0x, i0y);
 };
