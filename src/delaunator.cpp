@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <limits>
 #include <tuple>
+#include <exception>
 
 using namespace std;
 
@@ -78,6 +79,91 @@ namespace {
 
         return make_tuple(x, y);
     }
+    double compare(
+        const vector<double> &coords,
+        unsigned long int i,
+        unsigned long int j,
+        double cx,
+        double cy
+    ) {
+        const double d1 = dist(coords[2 * i], coords[2 * i + 1], cx, cy);
+        const double d2 = dist(coords[2 * j], coords[2 * j + 1], cx, cy);
+        const double diff1 = d1 - d2;
+        const double diff2 = coords[2 * i] - coords[2 * j];
+        const double diff3 = coords[2 * i + 1] - coords[2 * j + 1];
+
+        if (diff1) {
+            return diff1;
+        } else if(diff2) {
+            return diff2;
+        } else {
+            return diff3;
+        }
+    }
+    void quicksort(
+        unsigned long int ids[],
+        const vector<double> &coords,
+        unsigned int left,
+        unsigned int right,
+        double &cx,
+        double &cy
+    ) {
+        long int i;
+        long int j;
+        unsigned long int temp;
+
+        if (right - left <= 20) {
+            for (i = left + 1; i <= right; i++) {
+                // printf("i=%lu\n", i);
+                temp = ids[i];
+                j = i - 1;
+                while (
+                    j >= left &&
+                    compare(coords, ids[j], temp, cx, cy) > 0
+                ) {
+                    // printf("j=%lu\n", j);
+                    ids[j + 1] = ids[j];
+                    j--;
+                }
+                ids[j + 1] = temp;
+            }
+        } else {
+            throw runtime_error("not implemented");
+        }// else {
+    //         const median = (left + right) >> 1;
+    //         i = left + 1;
+    //         j = right;
+    //         swap(ids, median, i);
+    //         if (compare(coords, ids[left], ids[right], cx, cy) > 0) swap(ids, left, right);
+    //         if (compare(coords, ids[i], ids[right], cx, cy) > 0) swap(ids, i, right);
+    //         if (compare(coords, ids[left], ids[i], cx, cy) > 0) swap(ids, left, i);
+
+    //         temp = ids[i];
+    //         while (true) {
+    //             do i++; while (compare(coords, ids[i], temp, cx, cy) < 0);
+    //             do j--; while (compare(coords, ids[j], temp, cx, cy) > 0);
+    //             if (j < i) break;
+    //             swap(ids, i, j);
+    //         }
+    //         ids[left + 1] = ids[j];
+    //         ids[j] = temp;
+
+    //         if (right - i + 1 >= j - left) {
+    //             quicksort(ids, coords, i, right, cx, cy);
+    //             quicksort(ids, coords, left, j - 1, cx, cy);
+    //         } else {
+    //             quicksort(ids, coords, left, j - 1, cx, cy);
+    //             quicksort(ids, coords, i, right, cx, cy);
+    //         }
+    //     }
+    }
+    void print_array(unsigned long int ids[], unsigned int size) {
+        printf("[");
+        for (unsigned int i = 0; i < size; i++) {
+            printf("%lu, ", ids[i]);
+        }
+        printf("]\n");
+    }
 }
 
 Delaunator::Delaunator(const vector<double> &coords) {
@@ -86,7 +172,7 @@ Delaunator::Delaunator(const vector<double> &coords) {
     double max_y = -1 * max_double;
     double min_x = max_double;
     double min_y = max_double;
-    unsigned int ids[n];
+    unsigned long int ids[n];
     for (long int i = 0; i < n; i++) {
         const double x = coords[2 * i];
         const double y = coords[2 * i + 1];
@@ -171,6 +257,9 @@ Delaunator::Delaunator(const vector<double> &coords) {
 
     tie(center_x, center_y) = circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
     // [cx, cy) = center;
+    print_array(ids, n);
+    quicksort(ids, coords, 0, n - 1, center_x, center_y);
+    print_array(ids, n);
 
-    printf("i0x=%f i0y=%f", i0x, i0y);
+    // printf("i0x=%f i0y=%f", i0x, i0y);
 };
