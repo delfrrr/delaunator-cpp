@@ -5,6 +5,8 @@
 #include <tuple>
 #include <exception>
 #include <cmath>
+#include "prettyprint.hpp"
+#include <iostream>
 
 using namespace std;
 
@@ -158,20 +160,6 @@ namespace {
     //         }
     //     }
     }
-    void print_array(unsigned long int ids[], unsigned int size) {
-        printf("[");
-        for (unsigned int i = 0; i < size; i++) {
-            printf("%lu, ", ids[i]);
-        }
-        printf("]\n");
-    }
-    void print_array(const vector<int> &v) {
-        printf("[");
-        for (int i = 0; i < v.size(); i++) {
-            printf("%d, ", v[i]);
-        }
-        printf("]\n");
-    }
 }
 
 Delaunator::Delaunator(const vector<double> &coords) {
@@ -241,7 +229,7 @@ Delaunator::Delaunator(const vector<double> &coords) {
     }
 
     if (min_radius == max_double) {
-        throw No_triangulation();
+        throw runtime_error("not triangulation");;
     }
 
     if (
@@ -267,13 +255,8 @@ Delaunator::Delaunator(const vector<double> &coords) {
 
     // sort the points by distance from the seed triangle circumcenter
     quicksort(ids, coords, 0, n - 1, m_center_x, m_center_y);
-    // print_array(ids, n);
 
     m_hash_size = ceil(sqrt(n));
     m_hash.reserve(m_hash_size);
     for (int i = 0; i < m_hash_size; i++) m_hash.push_back(-1);
-    print_array(m_hash);
-    // printf("isnan(m_hash[0])=%d\n", isnan(m_hash[0]));
-    printf("m_hash[1]=%d\n", m_hash[1]);
-    // printf("i0x=%f i0y=%f", i0x, i0y);
 };
