@@ -1,6 +1,14 @@
 #pragma once
 #include <vector>
 #include <exception>
+#include <deque>
+
+struct DelaunatorPoint {
+    long int i;
+    double x;
+    double y;
+    long int t;
+};
 
 class Delaunator{
     public:
@@ -10,4 +18,5 @@ class Delaunator{
         double m_center_y;
         double m_hash_size;
         std::vector<int> m_hash;
+        std::deque<DelaunatorPoint> m_hull;
 };

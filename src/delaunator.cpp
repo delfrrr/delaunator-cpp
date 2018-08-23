@@ -103,6 +103,32 @@ namespace {
             return diff3;
         }
     }
+    // std::deque<long int>::iterator insert_node(
+    //     const deque<DelaunatorPoint> &hull,
+    //     const vector<double> &coords,
+    //     long int i,
+    //     std::deque<long int>::iterator prev
+    // ) {
+    //     return hull.emplace(prev + 1, {
+    //         .i = i,
+    //         .x = coords[2 * i],
+    //         .y = coords[2 * i + 1],
+    //         .t = 0
+    //     });
+    // }
+    std::deque<DelaunatorPoint>::iterator insert_node(
+        deque<DelaunatorPoint> &hull,
+        const vector<double> &coords,
+        long int i
+    ) {
+        DelaunatorPoint p = {
+            .i = i,
+            .x = coords[2 * i],
+            .y = coords[2 * i + 1],
+            .t = 0
+        };
+        return hull.insert(hull.end(), p);
+    }
     void quicksort(
         unsigned long int ids[],
         const vector<double> &coords,
@@ -259,4 +285,9 @@ Delaunator::Delaunator(const vector<double> &coords) {
     m_hash_size = ceil(sqrt(n));
     m_hash.reserve(m_hash_size);
     for (int i = 0; i < m_hash_size; i++) m_hash.push_back(-1);
+
+    std::deque<DelaunatorPoint>::iterator e = insert_node(m_hull, coords, i0);
+    // cout << i0 << endl;
+    // cout << m_hull[0].i << endl;
+
 };
