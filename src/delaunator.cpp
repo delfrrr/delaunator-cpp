@@ -287,7 +287,23 @@ Delaunator::Delaunator(const vector<double> &coords) {
     for (int i = 0; i < m_hash_size; i++) m_hash.push_back(-1);
 
     std::deque<DelaunatorPoint>::iterator e = insert_node(m_hull, coords, i0);
+    hash_edge(e);
     // cout << i0 << endl;
     // cout << m_hull[0].i << endl;
 
 };
+
+long int Delaunator::hash_key(double x, double y) {
+    const double dx = x - m_center_x;
+    const double dy = y - m_center_y;
+    // use pseudo-angle: a measure that monotonically increases
+    // with real angle, but doesn't require expensive trigonometry
+    const double p = 1 - dx / (abs(dx) + abs(dy));
+    return floor((2 + (dy < 0 ? -p : p)) / 4 * m_hash_size);
+}
+
+void Delaunator::hash_edge(std::deque<DelaunatorPoint>::iterator e){
+    const long int pos = e - m_hull.begin();
+    const DelaunatorPoint p = m_hull[pos];
+    m_hash[hash_key(p.x, p.y)] = pos;
+}

@@ -19,4 +19,6 @@ class Delaunator{
         double m_hash_size;
         std::vector<int> m_hash;
         std::deque<DelaunatorPoint> m_hull;
+        long int hash_key(double x, double y);
+        void hash_edge(std::deque<DelaunatorPoint>::iterator e);
 };
