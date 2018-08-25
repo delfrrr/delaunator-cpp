@@ -116,19 +116,20 @@ namespace {
     //         .t = 0
     //     });
     // }
-    std::deque<DelaunatorPoint>::iterator insert_node(
-        deque<DelaunatorPoint> &hull,
-        const vector<double> &coords,
-        long int i
-    ) {
-        DelaunatorPoint p = {
-            .i = i,
-            .x = coords[2 * i],
-            .y = coords[2 * i + 1],
-            .t = 0
-        };
-        return hull.insert(hull.end(), p);
-    }
+    // size_t insert_node(
+    //     deque<DelaunatorPoint> &hull,
+    //     const vector<double> &coords,
+    //     long int i
+    // ) {
+    //     DelaunatorPoint p = {
+    //         .i = i,
+    //         .x = coords[2 * i],
+    //         .y = coords[2 * i + 1],
+    //         .t = 0
+    //     };
+    //     size_t pos = hull.insert(hull.end(), p) - hull.begin();
+    //     return pos;
+    // }
     void quicksort(
         unsigned long int ids[],
         const vector<double> &coords,
@@ -188,16 +189,17 @@ namespace {
     }
 }
 
-Delaunator::Delaunator(const vector<double> &coords) {
-    const long int n = coords.size() >> 1;
+Delaunator::Delaunator(const vector<double> &in_coords) {
+    m_coords = move(in_coords);
+    const long int n = m_coords.size() >> 1;
     double max_x = -1 * max_double;
     double max_y = -1 * max_double;
     double min_x = max_double;
     double min_y = max_double;
     unsigned long int ids[n];
     for (long int i = 0; i < n; i++) {
-        const double x = coords[2 * i];
-        const double y = coords[2 * i + 1];
+        const double x = m_coords[2 * i];
+        const double y = m_coords[2 * i + 1];
         // printf("%f %f", x, y);
 
         if (x < min_x) min_x = x;
@@ -215,7 +217,7 @@ Delaunator::Delaunator(const vector<double> &coords) {
 
     // pick a seed point close to the centroid
     for (unsigned long int i = 0; i < n; i++) {
-        const double d = dist(cx, cy, coords[2 * i], coords[2 * i + 1]);
+        const double d = dist(cx, cy, m_coords[2 * i], m_coords[2 * i + 1]);
         if (d < min_dist) {
             i0 = i;
             min_dist = d;
@@ -227,7 +229,7 @@ Delaunator::Delaunator(const vector<double> &coords) {
     // find the point closest to the seed
     for (unsigned long int i = 0; i < n; i++) {
         if (i == i0) continue;
-        const double d = dist(coords[2 * i0], coords[2 * i0 + 1], coords[2 * i], coords[2 * i + 1]);
+        const double d = dist(m_coords[2 * i0], m_coords[2 * i0 + 1], m_coords[2 * i], m_coords[2 * i + 1]);
         if (d < min_dist && d > 0)
         {
             i1 = i;
@@ -243,9 +245,9 @@ Delaunator::Delaunator(const vector<double> &coords) {
         if (i == i0 || i == i1) continue;
 
         const double r = circumradius(
-            coords[2 * i0], coords[2 * i0 + 1],
-            coords[2 * i1], coords[2 * i1 + 1],
-            coords[2 * i], coords[2 * i + 1]);
+            m_coords[2 * i0], m_coords[2 * i0 + 1],
+            m_coords[2 * i1], m_coords[2 * i1 + 1],
+            m_coords[2 * i], m_coords[2 * i + 1]);
 
         if (r < min_radius)
         {
@@ -260,9 +262,9 @@ Delaunator::Delaunator(const vector<double> &coords) {
 
     if (
         area(
-            coords[2 * i0], coords[2 * i0 + 1],
-            coords[2 * i1], coords[2 * i1 + 1],
-            coords[2 * i2], coords[2 * i2 + 1]
+            m_coords[2 * i0], m_coords[2 * i0 + 1],
+            m_coords[2 * i1], m_coords[2 * i1 + 1],
+            m_coords[2 * i2], m_coords[2 * i2 + 1]
         ) < 0
     ) {
         const double tmp = i1;
@@ -270,28 +272,86 @@ Delaunator::Delaunator(const vector<double> &coords) {
         i2 = tmp;
     }
 
-    const double i0x = coords[2 * i0];
-    const double i0y = coords[2 * i0 + 1];
-    const double i1x = coords[2 * i1];
-    const double i1y = coords[2 * i1 + 1];
-    const double i2x = coords[2 * i2];
-    const double i2y = coords[2 * i2 + 1];
+    const double i0x = m_coords[2 * i0];
+    const double i0y = m_coords[2 * i0 + 1];
+    const double i1x = m_coords[2 * i1];
+    const double i1y = m_coords[2 * i1 + 1];
+    const double i2x = m_coords[2 * i2];
+    const double i2y = m_coords[2 * i2 + 1];
 
     tie(m_center_x, m_center_y) = circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
 
     // sort the points by distance from the seed triangle circumcenter
-    quicksort(ids, coords, 0, n - 1, m_center_x, m_center_y);
+    quicksort(ids, m_coords, 0, n - 1, m_center_x, m_center_y);
 
     m_hash_size = ceil(sqrt(n));
     m_hash.reserve(m_hash_size);
     for (int i = 0; i < m_hash_size; i++) m_hash.push_back(-1);
 
-    std::deque<DelaunatorPoint>::iterator e = insert_node(m_hull, coords, i0);
+    m_hull.reserve(m_coords.size());
+
+    size_t e = insert_node(i0);
     hash_edge(e);
-    // cout << i0 << endl;
+    m_hull[e].t = 0;
+
+    e = insert_node(i1, e);
+    hash_edge(e);
+    m_hull[e].t = 1;
+
+    e = insert_node(i2, e);
+    hash_edge(e);
+    m_hull[e].t = 2;
+
+    const size_t max_triangles = 2 * n - 5;
+    triangles.reserve(max_triangles * 3);
+    halfedges.reserve(max_triangles * 3);
+    add_triangle(i0, i1, i2, -1, -1, -1);
+
+    double xp = NAN;
+    double yp = NAN;
+    for (size_t k = 0; k < n; k++) {
+        const size_t i = ids[k];
+        const double x = m_coords[2 * i];
+        const double y = m_coords[2 * i + 1];
+        if (x == xp && y == yp) continue;
+        xp = x;
+        yp = y;
+        if (
+                (x == i0x && y == i0y) ||
+                (x == i1x && y == i1y) ||
+                (x == i2x && y == i2y)
+        ) continue;
+        cout << x << " " << y << endl;
+    }
+    // triangles_len = 0;
+
+    // hash_edge(e);
+    // cout << e << endl;
     // cout << m_hull[0].i << endl;
+    // cout << i0 << endl;
+    // cout << i1 << endl;
+    // cout << i2 << endl;
 
 };
+
+size_t Delaunator::insert_node(size_t i, size_t prev) {
+    const size_t e = insert_node(i);
+    m_hull[e].prev = prev;
+    m_hull[prev].next = e;
+    return e;
+};
+
+size_t Delaunator::insert_node(size_t i) {
+    DelaunatorPoint p = {
+        .i = i,
+        .x = m_coords[2 * i],
+        .y = m_coords[2 * i + 1],
+        .prev = -1,
+        .next = -1
+    };
+    m_hull.push_back(move(p));
+    return m_hull.size() - 1;
+}
 
 long int Delaunator::hash_key(double x, double y) {
     const double dx = x - m_center_x;
@@ -302,8 +362,39 @@ long int Delaunator::hash_key(double x, double y) {
     return floor((2 + (dy < 0 ? -p : p)) / 4 * m_hash_size);
 }
 
-void Delaunator::hash_edge(std::deque<DelaunatorPoint>::iterator e){
-    const long int pos = e - m_hull.begin();
-    const DelaunatorPoint p = m_hull[pos];
-    m_hash[hash_key(p.x, p.y)] = pos;
+void Delaunator::hash_edge(size_t e){
+    m_hash[hash_key(m_hull[e].x, m_hull[e].y)] = e;
 }
+
+size_t Delaunator::add_triangle(
+    size_t i0, size_t i1, size_t i2,
+    size_t a, size_t b, size_t c
+) {
+    const size_t t = triangles.size();
+    triangles.push_back(i0);
+    triangles.push_back(i1);
+    triangles.push_back(i2);
+    link(t, a);
+    link(t + 1, b);
+    link(t + 2, c);
+    return triangles.size();
+}
+
+void Delaunator::link(size_t a, size_t b) {
+    size_t s  = halfedges.size();
+    if (a == s) {
+        halfedges.push_back(a);
+    } else if (a < s) {
+        halfedges[a] = b;
+    } else {
+        throw runtime_error("Cannot link edge");
+    }
+
+    if (b > -1) {
+        if (b < halfedges.size()) {
+            halfedges[b] = a;
+        }  else {
+            throw runtime_error("Cannot link edge");
+        }
+    }
+};
