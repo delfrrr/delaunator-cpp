@@ -50,12 +50,12 @@ namespace {
     }
 
     double area(
-        const double &px,
-        const double &py,
-        const double &qx,
-        const double &qy,
-        const double &rx,
-        const double &ry
+        const double px,
+        const double py,
+        const double qx,
+        const double qy,
+        const double rx,
+        const double ry
     ) {
         return (qy - py) * (rx - qx) - (qx - px) * (ry - qy);
     }
@@ -187,6 +187,28 @@ namespace {
     //         }
     //     }
     }
+
+    bool in_circle(
+        double ax, double ay,
+        double bx, double by,
+        double cx, double cy,
+        double px, double py
+    ) {
+        const double dx = ax - px;
+        const double dy = ay - py;
+        const double ex = bx - px;
+        const double ey = by - py;
+        const double fx = cx - px;
+        const double fy = cy - py;
+
+        const double ap = dx * dx + dy * dy;
+        const double bp = ex * ex + ey * ey;
+        const double cp = fx * fx + fy * fy;
+
+        return (dx * (ey * cp - bp * fy) -
+            dy * (ex * cp - bp * fx) +
+            ap * (ex * fy - ey * fx)) < 0;
+    }
 }
 
 Delaunator::Delaunator(const vector<double> &in_coords) {
@@ -290,7 +312,7 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
 
     m_hull.reserve(m_coords.size());
 
-    size_t e = insert_node(i0);
+    long int e = insert_node(i0);
     hash_edge(e);
     m_hull[e].t = 0;
 
@@ -301,6 +323,8 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
     e = insert_node(i2, e);
     hash_edge(e);
     m_hull[e].t = 2;
+
+    cout << "m_hash " << m_hash << endl;
 
     const size_t max_triangles = 2 * n - 5;
     triangles.reserve(max_triangles * 3);
@@ -321,39 +345,174 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
                 (x == i1x && y == i1y) ||
                 (x == i2x && y == i2y)
         ) continue;
-        cout << x << " " << y << endl;
-    }
-    // triangles_len = 0;
 
-    // hash_edge(e);
-    // cout << e << endl;
-    // cout << m_hull[0].i << endl;
-    // cout << i0 << endl;
-    // cout << i1 << endl;
-    // cout << i2 << endl;
+        const size_t start_key = hash_key(x, y);
+        size_t key = start_key;
+        long int start = -1;
+        do {
+            start = m_hash[key];
+            key = (key + 1) % m_hash_size;
+        } while(
+            (start < 0 || m_hull[start].removed) &&
+            (key != start_key)
+        );
+
+        e = start;
+
+        while(
+            area(
+                x, y,
+                m_hull[e].x, m_hull[e].y,
+                m_hull[m_hull[e].next].x, m_hull[m_hull[e].next].y
+            ) >= 0
+        ) {
+            if (m_hull[e].next == -1) {
+                cout << e << endl;
+            }
+
+            e = m_hull[e].next;
+
+            if (e == start) {
+                throw runtime_error("Something is wrong with the input points.");
+            }
+        }
+
+        const bool walk_back = e == start;
+
+        // add the first triangle from the point
+        size_t t = add_triangle(
+            m_hull[e].i,
+            i,
+            m_hull[m_hull[e].next].i,
+            -1, -1, m_hull[e].t
+        );
+
+        m_hull[e].t = t; // keep track of boundary triangles on the hull
+        e = insert_node(i, e);
+
+        // recursively flip triangles from the point until they satisfy the Delaunay condition
+        m_hull[e].t = legalize(t + 2);
+
+        if (m_hull[m_hull[m_hull[e].prev].prev].t == halfedges[t + 1]) {
+            m_hull[m_hull[m_hull[e].prev].prev].t = t + 2;
+        }
+
+        // walk forward through the hull, adding more triangles and flipping recursively
+        long int q = m_hull[e].next;
+        while(
+            area(
+                x, y,
+                m_hull[q].x, m_hull[q].y,
+                m_hull[m_hull[q].next].x, m_hull[m_hull[q].next].y
+            ) < 0
+        ) {
+            t = add_triangle(
+                m_hull[q].i, i,
+                m_hull[m_hull[q].next].i, m_hull[m_hull[q].prev].t,
+                -1, m_hull[q].t
+            );
+            m_hull[m_hull[q].prev].t = legalize(t + 2);
+            remove_node(q);
+            q = m_hull[q].next;
+        }
+
+        if (walk_back) {
+            // walk backward from the other side, adding more triangles and flipping
+            q = m_hull[e].prev;
+            while(
+                area(
+                    x, y,
+                    m_hull[m_hull[q].prev].x, m_hull[m_hull[q].prev].y,
+                    m_hull[q].x, m_hull[q].y
+                ) < 0
+            ) {
+                t = add_triangle(
+                    m_hull[m_hull[q].prev].i, i,
+                    m_hull[q].i, -1,
+                    m_hull[q].t, m_hull[m_hull[q].prev].t
+                );
+                legalize(t + 2);
+                m_hull[m_hull[q].prev].t = t;
+                remove_node(q);
+                q = m_hull[q].prev;
+            }
+        }
+
+        hash_edge(e);
+        hash_edge(m_hull[e].prev);
+    }
 
 };
 
+size_t Delaunator::remove_node(size_t node) {
+    m_hull[m_hull[node].prev].next = m_hull[node].next;
+    m_hull[m_hull[node].next].prev = m_hull[node].prev;
+    m_hull[node].removed = true;
+    return m_hull[node].prev;
+}
+
+size_t Delaunator::legalize(size_t a) {
+    size_t halfedges_size = halfedges.size();
+    const long int b = halfedges[a];
+
+    const long int a0 = a - a % 3;
+    const long int b0 = b - b % 3;
+
+    const long int al = a0 + (a + 1) % 3;
+    const long int ar = a0 + (a + 2) % 3;
+    const long int bl = b0 + (b + 2) % 3;
+
+    const long int p0 = triangles[ar];
+    const long int pr = triangles[a];
+    const long int pl = triangles[al];
+    const long int p1 = triangles[bl];
+
+    const bool illegal = in_circle(
+            m_coords[2 * p0], m_coords[2 * p0 + 1],
+            m_coords[2 * pr], m_coords[2 * pr + 1],
+            m_coords[2 * pl], m_coords[2 * pl + 1],
+            m_coords[2 * p1], m_coords[2 * p1 + 1]
+    );
+
+    if (illegal) {
+        triangles[a] = p1;
+        triangles[b] = p0;
+        link(a, halfedges[bl]);
+        link(b, halfedges[ar]);
+        link(ar, bl);
+
+        const long int br = b0 + (b + 1) % 3;
+
+        legalize(a);
+        return legalize(br);
+    }
+
+}
+
 size_t Delaunator::insert_node(size_t i, size_t prev) {
-    const size_t e = insert_node(i);
-    m_hull[e].prev = prev;
-    m_hull[prev].next = e;
-    return e;
+    const size_t node = insert_node(i);
+    m_hull[node].next = m_hull[prev].next;
+    m_hull[node].prev = prev;
+    m_hull[m_hull[node].next].prev = node;
+    m_hull[prev].next = node;
+    return node;
 };
 
 size_t Delaunator::insert_node(size_t i) {
+    long int node = m_hull.size();
     DelaunatorPoint p = {
         .i = i,
         .x = m_coords[2 * i],
         .y = m_coords[2 * i + 1],
-        .prev = -1,
-        .next = -1
+        .prev = node,
+        .next = node,
+        .removed = false
     };
     m_hull.push_back(move(p));
-    return m_hull.size() - 1;
+    return node;
 }
 
-long int Delaunator::hash_key(double x, double y) {
+size_t Delaunator::hash_key(double x, double y) {
     const double dx = x - m_center_x;
     const double dy = y - m_center_y;
     // use pseudo-angle: a measure that monotonically increases
@@ -377,7 +536,7 @@ size_t Delaunator::add_triangle(
     link(t, a);
     link(t + 1, b);
     link(t + 2, c);
-    return triangles.size();
+    return t;
 }
 
 void Delaunator::link(size_t a, size_t b) {

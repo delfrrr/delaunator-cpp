@@ -7,6 +7,8 @@
 #include <exception>
 #include <vector>
 #include <initializer_list>
+#include "prettyprint.hpp"
+#include <iostream>
 using namespace std;
 
 namespace {
@@ -51,16 +53,6 @@ int main(int, char* argv[]) {
     const char* filename = argv[1];
     string json = read_file(filename);
     const vector<double> coords = get_geo_json_points(json);
-    // vector<double> xy_points;
-    // xy_points.reserve(points.x_vector.size() + points.y_vector.size());
-    // xy_points.insert(xy_points.end(), points.x_vector.begin(), points.x_vector.end());
-    // xy_points.insert(xy_points.end(), points.y_vector.begin(), points.y_vector.end());
-    // const int size = points.x_vector.size();
-    // double coords[size * 2];
-    // for(int i = 0; i < size; i++)
-    // {
-    //     coords[i] = points.x_vector[i];
-    //     coords[2 * i] = points.y_vector[i];
-    // }
     Delaunator delaunator(coords);
+    cout << delaunator.triangles << endl;
 }
