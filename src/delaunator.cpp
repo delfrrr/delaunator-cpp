@@ -1,5 +1,6 @@
 
 #include "delaunator.h"
+#include <algorithm>
 #include <cstdio>
 #include <limits>
 #include <tuple>
@@ -103,90 +104,14 @@ namespace {
             return diff3;
         }
     }
-    // std::deque<long int>::iterator insert_node(
-    //     const deque<DelaunatorPoint> &hull,
-    //     const vector<double> &coords,
-    //     long int i,
-    //     std::deque<long int>::iterator prev
-    // ) {
-    //     return hull.emplace(prev + 1, {
-    //         .i = i,
-    //         .x = coords[2 * i],
-    //         .y = coords[2 * i + 1],
-    //         .t = 0
-    //     });
-    // }
-    // size_t insert_node(
-    //     deque<DelaunatorPoint> &hull,
-    //     const vector<double> &coords,
-    //     long int i
-    // ) {
-    //     DelaunatorPoint p = {
-    //         .i = i,
-    //         .x = coords[2 * i],
-    //         .y = coords[2 * i + 1],
-    //         .t = 0
-    //     };
-    //     size_t pos = hull.insert(hull.end(), p) - hull.begin();
-    //     return pos;
-    // }
-    void quicksort(
-        unsigned long int ids[],
-        const vector<double> &coords,
-        unsigned int left,
-        unsigned int right,
-        double &cx,
-        double &cy
-    ) {
-        long int i;
-        long int j;
-        unsigned long int temp;
-
-        if (right - left <= 20) {
-            for (i = left + 1; i <= right; i++) {
-                // printf("i=%lu\n", i);
-                temp = ids[i];
-                j = i - 1;
-                while (
-                    j >= left &&
-                    compare(coords, ids[j], temp, cx, cy) > 0
-                ) {
-                    // printf("j=%lu\n", j);
-                    ids[j + 1] = ids[j];
-                    j--;
-                }
-                ids[j + 1] = temp;
-            }
-        } else {
-            throw runtime_error("not implemented");
-        }// else {
-    //         const median = (left + right) >> 1;
-    //         i = left + 1;
-    //         j = right;
-    //         swap(ids, median, i);
-    //         if (compare(coords, ids[left], ids[right], cx, cy) > 0) swap(ids, left, right);
-    //         if (compare(coords, ids[i], ids[right], cx, cy) > 0) swap(ids, i, right);
-    //         if (compare(coords, ids[left], ids[i], cx, cy) > 0) swap(ids, left, i);
-
-    //         temp = ids[i];
-    //         while (true) {
-    //             do i++; while (compare(coords, ids[i], temp, cx, cy) < 0);
-    //             do j--; while (compare(coords, ids[j], temp, cx, cy) > 0);
-    //             if (j < i) break;
-    //             swap(ids, i, j);
-    //         }
-    //         ids[left + 1] = ids[j];
-    //         ids[j] = temp;
-
-    //         if (right - i + 1 >= j - left) {
-    //             quicksort(ids, coords, i, right, cx, cy);
-    //             quicksort(ids, coords, left, j - 1, cx, cy);
-    //         } else {
-    //             quicksort(ids, coords, left, j - 1, cx, cy);
-    //             quicksort(ids, coords, i, right, cx, cy);
-    //         }
-    //     }
-    }
+    struct sort_to_center {
+        double cx;
+        double cy;
+        vector<double> &coords;
+        bool operator() (long int i, long int j) {
+            return compare(coords, i, j, cx, cy) < 0;
+        }
+    };
 
     bool in_circle(
         double ax, double ay,
@@ -218,7 +143,8 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
     double max_y = -1 * max_double;
     double min_x = max_double;
     double min_y = max_double;
-    unsigned long int ids[n];
+    vector<long int> ids;
+    ids.reserve(n);
     for (long int i = 0; i < n; i++) {
         const double x = coords[2 * i];
         const double y = coords[2 * i + 1];
@@ -228,7 +154,8 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
         if (y < min_y) min_y = y;
         if (x > max_x) max_x = x;
         if (y > max_y) max_y = y;
-        ids[i] = i;
+        // ids[i] = i;
+        ids.push_back(i);
     }
     const double cx = (min_x + max_x) / 2;
     const double cy = (min_y + max_y) / 2;
@@ -304,7 +231,15 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
     tie(m_center_x, m_center_y) = circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
 
     // sort the points by distance from the seed triangle circumcenter
-    quicksort(ids, coords, 0, n - 1, m_center_x, m_center_y);
+    // cerr << ids << endl;
+    const sort_to_center s = {
+        .cx = m_center_x,
+        .cy = m_center_y,
+        .coords = coords
+    };
+    sort(ids.begin(), ids.end(), s);
+    // quicksort(ids, coords, 0, n - 1, m_center_x, m_center_y);
+    // cerr << ids << endl;
 
     m_hash_size = ceil(sqrt(n));
     m_hash.reserve(m_hash_size);
@@ -323,8 +258,6 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
     e = insert_node(i2, e);
     hash_edge(e);
     m_hull[e].t = 2;
-
-    // cout << "m_hash " << m_hash << endl;
 
     const size_t max_triangles = 2 * n - 5;
     triangles.reserve(max_triangles * 3);
@@ -486,7 +419,7 @@ size_t Delaunator::legalize(size_t a) {
         legalize(a);
         return legalize(br);
     }
-
+    return ar;
 }
 
 size_t Delaunator::insert_node(size_t i, size_t prev) {
