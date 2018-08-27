@@ -212,16 +212,16 @@ namespace {
 }
 
 Delaunator::Delaunator(const vector<double> &in_coords) {
-    m_coords = move(in_coords);
-    const long int n = m_coords.size() >> 1;
+    coords = move(in_coords);
+    const long int n = coords.size() >> 1;
     double max_x = -1 * max_double;
     double max_y = -1 * max_double;
     double min_x = max_double;
     double min_y = max_double;
     unsigned long int ids[n];
     for (long int i = 0; i < n; i++) {
-        const double x = m_coords[2 * i];
-        const double y = m_coords[2 * i + 1];
+        const double x = coords[2 * i];
+        const double y = coords[2 * i + 1];
         // printf("%f %f", x, y);
 
         if (x < min_x) min_x = x;
@@ -239,7 +239,7 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
 
     // pick a seed point close to the centroid
     for (unsigned long int i = 0; i < n; i++) {
-        const double d = dist(cx, cy, m_coords[2 * i], m_coords[2 * i + 1]);
+        const double d = dist(cx, cy, coords[2 * i], coords[2 * i + 1]);
         if (d < min_dist) {
             i0 = i;
             min_dist = d;
@@ -251,7 +251,7 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
     // find the point closest to the seed
     for (unsigned long int i = 0; i < n; i++) {
         if (i == i0) continue;
-        const double d = dist(m_coords[2 * i0], m_coords[2 * i0 + 1], m_coords[2 * i], m_coords[2 * i + 1]);
+        const double d = dist(coords[2 * i0], coords[2 * i0 + 1], coords[2 * i], coords[2 * i + 1]);
         if (d < min_dist && d > 0)
         {
             i1 = i;
@@ -267,9 +267,9 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
         if (i == i0 || i == i1) continue;
 
         const double r = circumradius(
-            m_coords[2 * i0], m_coords[2 * i0 + 1],
-            m_coords[2 * i1], m_coords[2 * i1 + 1],
-            m_coords[2 * i], m_coords[2 * i + 1]);
+            coords[2 * i0], coords[2 * i0 + 1],
+            coords[2 * i1], coords[2 * i1 + 1],
+            coords[2 * i], coords[2 * i + 1]);
 
         if (r < min_radius)
         {
@@ -284,9 +284,9 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
 
     if (
         area(
-            m_coords[2 * i0], m_coords[2 * i0 + 1],
-            m_coords[2 * i1], m_coords[2 * i1 + 1],
-            m_coords[2 * i2], m_coords[2 * i2 + 1]
+            coords[2 * i0], coords[2 * i0 + 1],
+            coords[2 * i1], coords[2 * i1 + 1],
+            coords[2 * i2], coords[2 * i2 + 1]
         ) < 0
     ) {
         const double tmp = i1;
@@ -294,23 +294,23 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
         i2 = tmp;
     }
 
-    const double i0x = m_coords[2 * i0];
-    const double i0y = m_coords[2 * i0 + 1];
-    const double i1x = m_coords[2 * i1];
-    const double i1y = m_coords[2 * i1 + 1];
-    const double i2x = m_coords[2 * i2];
-    const double i2y = m_coords[2 * i2 + 1];
+    const double i0x = coords[2 * i0];
+    const double i0y = coords[2 * i0 + 1];
+    const double i1x = coords[2 * i1];
+    const double i1y = coords[2 * i1 + 1];
+    const double i2x = coords[2 * i2];
+    const double i2y = coords[2 * i2 + 1];
 
     tie(m_center_x, m_center_y) = circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
 
     // sort the points by distance from the seed triangle circumcenter
-    quicksort(ids, m_coords, 0, n - 1, m_center_x, m_center_y);
+    quicksort(ids, coords, 0, n - 1, m_center_x, m_center_y);
 
     m_hash_size = ceil(sqrt(n));
     m_hash.reserve(m_hash_size);
     for (int i = 0; i < m_hash_size; i++) m_hash.push_back(-1);
 
-    m_hull.reserve(m_coords.size());
+    m_hull.reserve(coords.size());
 
     long int e = insert_node(i0);
     hash_edge(e);
@@ -324,7 +324,7 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
     hash_edge(e);
     m_hull[e].t = 2;
 
-    cout << "m_hash " << m_hash << endl;
+    // cout << "m_hash " << m_hash << endl;
 
     const size_t max_triangles = 2 * n - 5;
     triangles.reserve(max_triangles * 3);
@@ -335,8 +335,8 @@ Delaunator::Delaunator(const vector<double> &in_coords) {
     double yp = NAN;
     for (size_t k = 0; k < n; k++) {
         const size_t i = ids[k];
-        const double x = m_coords[2 * i];
-        const double y = m_coords[2 * i + 1];
+        const double x = coords[2 * i];
+        const double y = coords[2 * i + 1];
         if (x == xp && y == yp) continue;
         xp = x;
         yp = y;
@@ -468,10 +468,10 @@ size_t Delaunator::legalize(size_t a) {
     const long int p1 = triangles[bl];
 
     const bool illegal = in_circle(
-            m_coords[2 * p0], m_coords[2 * p0 + 1],
-            m_coords[2 * pr], m_coords[2 * pr + 1],
-            m_coords[2 * pl], m_coords[2 * pl + 1],
-            m_coords[2 * p1], m_coords[2 * p1 + 1]
+            coords[2 * p0], coords[2 * p0 + 1],
+            coords[2 * pr], coords[2 * pr + 1],
+            coords[2 * pl], coords[2 * pl + 1],
+            coords[2 * p1], coords[2 * p1 + 1]
     );
 
     if (illegal) {
@@ -502,8 +502,8 @@ size_t Delaunator::insert_node(size_t i) {
     long int node = m_hull.size();
     DelaunatorPoint p = {
         .i = i,
-        .x = m_coords[2 * i],
-        .y = m_coords[2 * i + 1],
+        .x = coords[2 * i],
+        .y = coords[2 * i + 1],
         .prev = node,
         .next = node,
         .removed = false

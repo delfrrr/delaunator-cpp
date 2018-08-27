@@ -19,13 +19,13 @@ class Delaunator{
         Delaunator(const std::vector<double> &in_coords);
         std::vector<unsigned long int> triangles;
         std::vector<long int> halfedges;
+        std::vector<double> coords;
         // size_t triangles_len;
     private:
         double m_center_x;
         double m_center_y;
         size_t m_hash_size;
         std::vector<int> m_hash;
-        std::vector<double> m_coords;
         std::vector<DelaunatorPoint> m_hull;
         size_t insert_node(size_t i);
         size_t insert_node(size_t i, size_t prev);
