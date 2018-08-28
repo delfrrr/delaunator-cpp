@@ -5,7 +5,7 @@
 #include <memory>
 
 struct DelaunatorPoint {
-    size_t i;
+    long int i;
     double x;
     double y;
     long int t;
@@ -20,22 +20,22 @@ class Delaunator{
         std::vector<unsigned long int> triangles;
         std::vector<long int> halfedges;
         std::vector<double> coords;
-        // size_t triangles_len;
+        // long int triangles_len;
     private:
         double m_center_x;
         double m_center_y;
-        size_t m_hash_size;
+        long int m_hash_size;
         std::vector<int> m_hash;
         std::vector<DelaunatorPoint> m_hull;
-        size_t insert_node(size_t i);
-        size_t insert_node(size_t i, size_t prev);
-        size_t hash_key(double x, double y);
-        void hash_edge(size_t e);
-        size_t add_triangle(
-            size_t i0, size_t i1, size_t i2,
-            size_t a, size_t b, size_t c
+        long int insert_node(long int i);
+        long int insert_node(long int i, long int prev);
+        long int hash_key(double x, double y);
+        void hash_edge(long int e);
+        long int add_triangle(
+            long int i0, long int i1, long int i2,
+            long int a, long int b, long int c
         );
-        void link(size_t a, size_t b);
-        size_t legalize(size_t a);
-        size_t remove_node(size_t node);
+        void link(long int a, long int b);
+        long int legalize(long int a);
+        long int remove_node(long int node);
 };
