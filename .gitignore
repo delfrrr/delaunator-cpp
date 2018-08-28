@@ -11,4 +11,4 @@ CTestTestfile.cmake
 build
 includes
 .DS_Store
-test-files/out.json
+out
