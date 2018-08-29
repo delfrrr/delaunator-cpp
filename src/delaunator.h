@@ -20,7 +20,6 @@ class Delaunator{
         std::vector<unsigned long int> triangles;
         std::vector<long int> halfedges;
         std::vector<double> coords;
-        // long int triangles_len;
     private:
         double m_center_x;
         double m_center_y;
