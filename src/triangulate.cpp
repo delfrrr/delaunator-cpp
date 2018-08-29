@@ -1,4 +1,3 @@
-// #include <iostream>
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include "delaunator.h"
@@ -8,7 +7,7 @@
 #include <exception>
 #include <vector>
 #include <initializer_list>
-#include "prettyprint.hpp"
+// #include "prettyprint.hpp"
 #include <iostream>
 using namespace std;
 
@@ -42,9 +41,7 @@ namespace {
             const double y = coordinates[1].GetDouble();
             coords.push_back(x);
             coords.push_back(y);
-            // printf("coordinates %f %f \n", x, y);
         }
-        // Points points = {.x_vector = x_vector, .y_vector = y_vector};
         return coords;
     }
 
@@ -115,17 +112,8 @@ int main(int, char* argv[]) {
         stream.open(output);
         stream << out_json;
         stream.close();
-        // cout << output << endl;
     } else {
         puts(out_json);
     }
-
-    // cout << output << endl;
-    // if (sizeof(argv) > 2) {
-    //     puts("ouput to file");
-    // } else {
-    //     puts(out_json);
-    // }
     return 0;
-    // cout << delaunator.triangles << endl;
 }
