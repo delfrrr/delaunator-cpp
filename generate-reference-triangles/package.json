@@ -1,0 +1,8 @@
+{
+  "name": "generate-reference-triangles",
+  "private": true,
+  "main": "index.js",
+  "dependencies": {
+    "delaunator": "^2.0.2"
+  }
+}
