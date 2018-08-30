@@ -45,7 +45,7 @@ namespace {
         return coords;
     }
 
-    const char* serialize_to_json(Delaunator &delaunator) {
+    const string serialize_to_json(Delaunator &delaunator) {
         rapidjson::StringBuffer sb;
         rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(sb);
         writer.StartObject();
@@ -93,7 +93,7 @@ namespace {
                     }
                 writer.EndArray();
         writer.EndObject();
-        return sb.GetString();
+        return string(sb.GetString());
     }
 }
 
@@ -103,8 +103,8 @@ int main(int, char* argv[]) {
     const char* output = argv[2];
     string json = read_file(filename);
     const vector<double> coords = get_geo_json_points(json);
-    Delaunator delaunator(coords);
-    const char* out_json = serialize_to_json(delaunator);
+    Delaunator delaunator(move(coords));
+    const char* out_json = serialize_to_json(delaunator).c_str();
 
     if (output) {
         printf("Writing to file %s", output);
