@@ -1,7 +1,7 @@
 
 #include "json-helpers.h"
 #include <fstream>
-#include <exception>
+#include <stdexcept>
 #include "rapidjson/document.h"
 
 using namespace std;

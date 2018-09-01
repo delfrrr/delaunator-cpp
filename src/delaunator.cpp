@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <limits>
 #include <tuple>
-#include <exception>
+#include <stdexcept>
 #include <cmath>
 // #include "prettyprint.hpp"
 #include <iostream>
