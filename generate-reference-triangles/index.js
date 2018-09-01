@@ -18,9 +18,13 @@ for(let i = 0; i < n; i++) {
     coords[2 * i + 1] = f.geometry.coordinates[1];
 }
 
-console.time('Delaunator');
+const start = Date.now();
 const delaunator = new Delaunator(coords);
-console.timeEnd('Delaunator');
+const end = Date.now();
+
+console.log('points =', coords.length / 2);
+console.log('miliseconds =', end - start);
+console.log('triangles =', delaunator.triangles.length);
 
 const trianglesAr = Array.from(delaunator.triangles);
 writeFileSync(outputFile, JSON.stringify(trianglesAr));

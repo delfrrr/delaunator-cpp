@@ -19,7 +19,11 @@ add_executable(delaunator-test src/delaunator-test.cpp)
 target_link_libraries(delaunator-test delaunator)
 target_include_directories (delaunator-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/includes/catch/single_include/catch2")
 target_link_libraries(delaunator-test json-helpers)
-target_link_libraries(delaunator-test delaunator)
+
+#benchmark
+add_executable(benchmark src/benchmark.cpp)
+target_link_libraries(benchmark delaunator)
+target_link_libraries(benchmark json-helpers)
 
 
 #triangulate
