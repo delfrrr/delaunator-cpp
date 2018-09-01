@@ -5,6 +5,8 @@ A really fast C++ library for
 
 delaunator-cpp is a C++ port from https://github.com/mapbox/delaunator a JavaScript implementation of very fast 2D Delaunay algorithm.
 
+[![Build Status](https://travis-ci.org/delfrrr/delaunator-cpp.svg?branch=master)](https://travis-ci.org/delfrrr/delaunator-cpp)
+
 ## Features
 
 * Probably the fastest C++ open source 2D Delaunay implementation
