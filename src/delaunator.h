@@ -16,7 +16,7 @@ struct DelaunatorPoint {
 
 class Delaunator{
     public:
-        Delaunator(std::vector<double> in_coords);
+        Delaunator(std::vector<double>& in_coords);
         std::vector<unsigned long int> triangles;
         std::vector<long int> halfedges;
         std::vector<double> coords;

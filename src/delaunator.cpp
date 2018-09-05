@@ -136,7 +136,7 @@ namespace {
     }
 }
 
-Delaunator::Delaunator(vector<double> in_coords) {
+Delaunator::Delaunator(vector<double>& in_coords) {
     coords = move(in_coords);
     const long int n = coords.size() >> 1;
     double max_x = -1 * max_double;
@@ -375,8 +375,9 @@ long int Delaunator::remove_node(long int node) {
     return m_hull[node].prev;
 }
 
-long int Delaunator::legalize(long int a) {
-    long int halfedges_size = halfedges.size();
+long int Delaunator::legalize(long int a)
+{
+    
     const long int b = halfedges[a];
 
     const long int a0 = a - a % 3;
@@ -442,7 +443,7 @@ long int Delaunator::hash_key(double x, double y) {
     // use pseudo-angle: a measure that monotonically increases
     // with real angle, but doesn't require expensive trigonometry
     const double p = 1 - dx / (abs(dx) + abs(dy));
-    return floor((2 + (dy < 0 ? -p : p)) / 4 * m_hash_size);
+    return floor(((2 + (dy < 0 ? -p : p)) / 4) * (m_hash_size-1));
 }
 
 void Delaunator::hash_edge(long int e){
