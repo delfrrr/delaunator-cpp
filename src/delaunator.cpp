@@ -136,7 +136,7 @@ namespace {
     }
 }
 
-Delaunator::Delaunator(vector<double> in_coords) {
+Delaunator::Delaunator(vector<double>& in_coords) {
     coords = move(in_coords);
     const long int n = coords.size() >> 1;
     double max_x = -1 * max_double;
