@@ -18,16 +18,16 @@ delaunator-cpp is a C++ port from https://github.com/mapbox/delaunator a JavaScr
 
 ```CPP
 #include <delaunator.hpp>
-#include  <cstdio>
+#include <cstdio>
 using namespace std;
 //...
 int main(int, char* argv[]) {
     //...
-    const vector<double> coords = {/* x0, y0, x1, y1, ... */};
+    std::vector<double> coords = {/* x0, y0, x1, y1, ... */};
 
     //triangulation happens here
     //note moving points to constructor
-    delaunator::Delaunator delaunator(move(coords));
+    delaunator::Delaunator delaunator(coords);
 
     for(std::size_t i = 0; i < delaunator.triangles.size(); i+=3) {
         printf(
