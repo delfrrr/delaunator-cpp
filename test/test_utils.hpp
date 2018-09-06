@@ -1,32 +1,30 @@
-
-#include "json-helpers.h"
 #include <fstream>
 #include <stdexcept>
 #include "rapidjson/document.h"
 
-using namespace std;
+namespace test_utils {
 
-string json_helpers::read_file(const char* filename) {
-    ifstream input_file(filename);
+std::string read_file(const char* filename) {
+    std::ifstream input_file(filename);
     if(input_file.good()) {
-        string json_str(
-            (istreambuf_iterator<char>(input_file)),
-            istreambuf_iterator<char>()
+        std::string json_str(
+            (std::istreambuf_iterator<char>(input_file)),
+            std::istreambuf_iterator<char>()
         );
         return json_str;
     } else {
         printf("Error reading file %s", filename);
-        throw runtime_error("Error reading file");
+        throw std::runtime_error("Error reading file");
     }
 }
 
-vector<double> json_helpers::get_geo_json_points(const string& json) {
+std::vector<double> get_geo_json_points(std::string const& json) {
     rapidjson::Document document;
     if(document.Parse(json.c_str()).HasParseError()) {
-        throw runtime_error("Cannot parse JSON");
+        throw std::runtime_error("Cannot parse JSON");
     }
     const rapidjson::Value& features = document["features"];
-    vector<double> coords;
+    std::vector<double> coords;
     // vector<double> y_vector;
     for(rapidjson::SizeType i = 0; i < features.Size(); i++) {
         const rapidjson::Value& coordinates = features[i]["geometry"]["coordinates"];
@@ -38,19 +36,21 @@ vector<double> json_helpers::get_geo_json_points(const string& json) {
     return coords;
 }
 
-vector<double> json_helpers::get_array_points(const string& json) {
-    vector<double> points;
+std::vector<double> get_array_points(std::string const& json) {
+    std::vector<double> points;
     rapidjson::Document document;
     if(document.Parse(json.c_str()).HasParseError()) {
-        throw runtime_error("Cannot parse JSON");
+        throw std::runtime_error("Cannot parse JSON");
     }
     if(!document.IsArray()) {
-        throw runtime_error("It's not JSON Array");
+        throw std::runtime_error("It's not JSON Array");
     }
-    points.reserve(static_cast<int>(document.Size()));
+    points.reserve(static_cast<std::size_t>(document.Size()));
     for(rapidjson::SizeType i = 0; i < document.Size(); i++) {
         points.push_back(document[i].GetDouble());
     }
     return points;
 
 }
+
+} // end ns test_utils

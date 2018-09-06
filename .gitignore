@@ -8,8 +8,8 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 .vscode
-build
-includes
+cmake-build
 .DS_Store
 out
 node_modules
+mason_packages
