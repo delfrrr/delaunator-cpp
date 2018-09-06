@@ -19,7 +19,7 @@ delaunator-cpp is a C++ port from https://github.com/mapbox/delaunator a JavaScr
 ```CPP
 #include <delaunator.hpp>
 #include <cstdio>
-using namespace std;
+
 //...
 int main(int, char* argv[]) {
     //...
