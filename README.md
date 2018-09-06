@@ -6,6 +6,7 @@ A really fast C++ library for
 delaunator-cpp is a C++ port from https://github.com/mapbox/delaunator a JavaScript implementation of very fast 2D Delaunay algorithm.
 
 [![Build Status](https://travis-ci.org/delfrrr/delaunator-cpp.svg?branch=master)](https://travis-ci.org/delfrrr/delaunator-cpp)
+[![badge](https://mapbox.s3.amazonaws.com/cpp-assets/hpp-skel-badge_blue.svg)](https://github.com/mapbox/hpp-skel)
 
 ## Features
 
@@ -16,7 +17,7 @@ delaunator-cpp is a C++ port from https://github.com/mapbox/delaunator a JavaScr
 ## Usage
 
 ```CPP
-#include "delaunator.h"
+#include <delaunator.hpp>
 #include  <cstdio>
 using namespace std;
 //...
@@ -26,9 +27,9 @@ int main(int, char* argv[]) {
 
     //triangulation happens here
     //note moving points to constructor
-    Delaunator delaunator(move(coords));
+    delaunator::Delaunator delaunator(move(coords));
 
-    for(long int i = 0; i < delaunator.triangles.size(); i+=3) {
+    for(std::size_t i = 0; i < delaunator.triangles.size(); i+=3) {
         printf(
             "Triangle points: [[%f, %f], [%f, %f], [%f, %f]]\n",
             delaunator.coords[2 * delaunator.triangles[i]],         //tx0
@@ -42,7 +43,7 @@ int main(int, char* argv[]) {
 }
 ```
 
-For full example see `src/triangulate.cpp`
+For full example see `examples/triangulate/main.cpp`
 
 ## TODO
 
