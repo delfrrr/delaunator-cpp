@@ -131,7 +131,7 @@ namespace {
 
 Delaunator::Delaunator()
 {
-    m_epilon = std::pow(2,-52);
+    m_epsilon = std::pow(2,-52);
 }
 
 Delaunator::Delaunator(const vector<double>& coords) : Delaunator()
@@ -266,7 +266,7 @@ Delaunator::Delaunator(const vector<double>& coords) : Delaunator()
         const double x = coords[2 * i];
         const double y = coords[2 * i + 1];
 
-        if (k > 0 && std::abs(x - xp) <= m_epilon && std::abs(y - yp) <= m_epilon) continue;
+        if (k > 0 && std::abs(x - xp) <= m_epsilon && std::abs(y - yp) <= m_epsilon) continue;
         
         xp = x;
         yp = y;
@@ -294,10 +294,17 @@ Delaunator::Delaunator(const vector<double>& coords) : Delaunator()
         while(!orient(x, y,m_hl[e].x, m_hl[e].y,m_hl[m_hl[e].next].x, m_hl[m_hl[e].next].y))
         {
             e = m_hl[e].next;
-
-            if (e == start) {
-                throw runtime_error("Something is wrong with the input points.");
+            
+            if (e == start)
+            {
+                e = -1;
+                break;
             }
+        }
+        
+        if(e == -1)
+        {
+            continue;
         }
 
         const bool walk_back = e == start;

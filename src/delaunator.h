@@ -34,7 +34,7 @@ class Delaunator{
         std::vector<int>                m_hash;
         std::vector<DelaunatorPoint>    m_hl;
     
-        double                          m_epilon;
+        double                          m_epsilon;
  
     private:
     
