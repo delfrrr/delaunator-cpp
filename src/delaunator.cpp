@@ -87,8 +87,8 @@ namespace {
     
     double compare(
         const vector<double> &coords,
-        unsigned long int i,
-        unsigned long int j,
+        uint64_t i,
+        uint64_t j,
         double cx,
         double cy
     ) {
@@ -111,7 +111,7 @@ namespace {
         double cx;
         double cy;
         vector<double> &coords;
-        bool operator() (long int i, long int j) {
+        bool operator() (int64_t i, int64_t j) {
             return compare(coords, i, j, cx, cy) < 0;
         }
     };
@@ -148,16 +148,16 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
 {
     coords = move(in_coords);
     
-    const long int n = coords.size() >> 1;
+    const int64_t n = coords.size() >> 1;
     double max_x = -1 * max_double;
     double max_y = -1 * max_double;
     double min_x = max_double;
     double min_y = max_double;
     
-    vector<long int> ids;
+    vector<int64_t> ids;
     ids.reserve(n);
     
-    for (long int i = 0; i < n; i++)
+    for (int64_t i = 0; i < n; i++)
     {
         const double x = coords[2 * i];
         const double y = coords[2 * i + 1];
@@ -172,12 +172,12 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
     const double cx = (min_x + max_x) / 2;
     const double cy = (min_y + max_y) / 2;
     double min_dist = max_double;
-    unsigned long int i0;
-    unsigned long int i1;
-    unsigned long int i2;
+    uint64_t i0;
+    uint64_t i1;
+    uint64_t i2;
 
     // pick a seed point close to the centroid
-    for (unsigned long int i = 0; i < n; i++) {
+    for (uint64_t i = 0; i < n; i++) {
         const double d = dist(cx, cy, coords[2 * i], coords[2 * i + 1]);
         if (d < min_dist) {
             i0 = i;
@@ -188,7 +188,7 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
     min_dist = max_double;
 
     // find the point closest to the seed
-    for (unsigned long int i = 0; i < n; i++) {
+    for (uint64_t i = 0; i < n; i++) {
         if (i == i0) continue;
         const double d = dist(coords[2 * i0], coords[2 * i0 + 1], coords[2 * i], coords[2 * i + 1]);
         if (d < min_dist && d > 0)
@@ -201,7 +201,7 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
     double min_radius = max_double;
 
     // find the third point which forms the smallest circumcircle with the first two
-    for (unsigned long int i = 0; i < n; i++)
+    for (uint64_t i = 0; i < n; i++)
     {
         if (i == i0 || i == i1) continue;
 
@@ -258,7 +258,7 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
     m_hl.reserve(coords.size());
 
     m_hull_index = insert_node(i0);
-    long int e = m_hull_index;
+    int64_t e = m_hull_index;
     hash_edge(e);
     m_hl[e].t = 0;
 
@@ -270,7 +270,7 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
     hash_edge(e);
     m_hl[e].t = 2;
 
-    const long int max_triangles = 2 * n - 5;
+    const int64_t max_triangles = 2 * n - 5;
     triangles.reserve(max_triangles * 3);
     halfedges.reserve(max_triangles * 3);
     add_triangle(i0, i1, i2, -1, -1, -1);
@@ -278,9 +278,9 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
     double xp = NAN;
     double yp = NAN;
    
-    for (long int k = 0; k < ids.size(); k++)
+    for (int64_t k = 0; k < ids.size(); k++)
     {
-        const long int i = ids[k];
+        const int64_t i = ids[k];
         const double x = coords[2 * i];
         const double y = coords[2 * i + 1];
 
@@ -295,9 +295,9 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
                 (x == i2x && y == i2y)
         ) continue;
 
-        const long int start_key = hash_key(x, y);
-        long int key = start_key;
-        long int start = -1;
+        const int64_t start_key = hash_key(x, y);
+        int64_t key = start_key;
+        int64_t start = -1;
         do {
             start = m_hash[key];
             key = (key + 1) % m_hash_size;
@@ -321,7 +321,7 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
         const bool walk_back = e == start;
 
         // add the first triangle from the point
-        long int t = add_triangle(
+        int64_t t = add_triangle(
             m_hl[e].i,
             i,
             m_hl[m_hl[e].next].i,
@@ -335,7 +335,7 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
         m_hl[e].t = legalize(t + 2,e);
         
         // walk forward through the hull, adding more triangles and flipping recursively
-        long int q = m_hl[e].next;
+        int64_t q = m_hl[e].next;
         while(
             orient(
                 x, y,
@@ -381,31 +381,31 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
 
 };
 
-long int Delaunator::remove_node(long int node) {
+int64_t Delaunator::remove_node(int64_t node) {
     m_hl[m_hl[node].prev].next = m_hl[node].next;
     m_hl[m_hl[node].next].prev = m_hl[node].prev;
     m_hl[node].removed = true;
     return m_hl[node].prev;
 }
 
-long int Delaunator::legalize(long int a, long int& e)
+int64_t Delaunator::legalize(int64_t a, int64_t& e)
 {
     
-    const long int b = halfedges[a];
+    const int64_t b = halfedges[a];
 
-    const long int a0 = a - a % 3;
-    const long int b0 = b - b % 3;
+    const int64_t a0 = a - a % 3;
+    const int64_t b0 = b - b % 3;
 
-    const long int al = a0 + (a + 1) % 3;
-    const long int ar = a0 + (a + 2) % 3;
-    const long int bl = b0 + (b + 2) % 3;
+    const int64_t al = a0 + (a + 1) % 3;
+    const int64_t ar = a0 + (a + 2) % 3;
+    const int64_t bl = b0 + (b + 2) % 3;
     
     if (b == -1) return ar;
 
-    const long int p0 = triangles[ar];
-    const long int pr = triangles[a];
-    const long int pl = triangles[al];
-    const long int p1 = triangles[bl];
+    const int64_t p0 = triangles[ar];
+    const int64_t pr = triangles[a];
+    const int64_t pl = triangles[al];
+    const int64_t p1 = triangles[bl];
 
     const bool illegal = in_circle(
             coords[2 * p0], coords[2 * p0 + 1],
@@ -422,7 +422,7 @@ long int Delaunator::legalize(long int a, long int& e)
 #if false
         link(a, halfedges[bl]);
 #else
-        const long int hbl = halfedges[bl];
+        const int64_t hbl = halfedges[bl];
         // edge swapped on the other side of the hull (rare); fix the halfedge reference
         if (hbl == -1)
         {
@@ -445,7 +445,7 @@ long int Delaunator::legalize(long int a, long int& e)
         link(b, halfedges[ar]);
         link(ar, bl);
 
-        const long int br = b0 + (b + 1) % 3;
+        const int64_t br = b0 + (b + 1) % 3;
 
         legalize(a,e);
         return legalize(br,e);
@@ -453,8 +453,8 @@ long int Delaunator::legalize(long int a, long int& e)
     return ar;
 }
 
-long int Delaunator::insert_node(long int i, long int prev) {
-    const long int node = insert_node(i);
+int64_t Delaunator::insert_node(int64_t i, int64_t prev) {
+    const int64_t node = insert_node(i);
     m_hl[node].next = m_hl[prev].next;
     m_hl[node].prev = prev;
     m_hl[m_hl[node].next].prev = node;
@@ -462,8 +462,8 @@ long int Delaunator::insert_node(long int i, long int prev) {
     return node;
 };
 
-long int Delaunator::insert_node(long int i) {
-    long int node = m_hl.size();
+int64_t Delaunator::insert_node(int64_t i) {
+    int64_t node = m_hl.size();
     DelaunatorPoint p = {
         .i = i,
         .x = coords[2 * i],
@@ -482,23 +482,23 @@ double Delaunator::pseudo_angle(const double dx, const double dy)
     return (dy > 0 ? 3 - p : 1 + p) / 4;
 }
 
-long int Delaunator::hash_key(const double x,const double y)
+int64_t Delaunator::hash_key(const double x,const double y)
 {
-    long int key = (long int)(std::floor( pseudo_angle( x - m_center_x, y-m_center_y) * m_hash_size));
+    int64_t key = (int64_t)(std::floor( pseudo_angle( x - m_center_x, y-m_center_y) * m_hash_size));
     return key % m_hash_size;
 }
 
-void Delaunator::hash_edge(long int e)
+void Delaunator::hash_edge(int64_t e)
 {
 
     m_hash[hash_key(m_hl[e].x, m_hl[e].y)] = e;
 }
 
-long int Delaunator::add_triangle(
-    long int i0, long int i1, long int i2,
-    long int a, long int b, long int c
+int64_t Delaunator::add_triangle(
+    int64_t i0, int64_t i1, int64_t i2,
+    int64_t a, int64_t b, int64_t c
 ) {
-    const long int t = triangles.size();
+    const int64_t t = triangles.size();
     triangles.push_back(i0);
     triangles.push_back(i1);
     triangles.push_back(i2);
@@ -508,8 +508,8 @@ long int Delaunator::add_triangle(
     return t;
 }
 
-void Delaunator::link(long int a, long int b) {
-    long int s  = halfedges.size();
+void Delaunator::link(int64_t a, int64_t b) {
+    int64_t s  = halfedges.size();
     if (a == s) {
         halfedges.push_back(b);
     } else if (a < s) {
@@ -518,7 +518,7 @@ void Delaunator::link(long int a, long int b) {
         throw runtime_error("Cannot link edge");
     }
     if (b != -1) {
-        long int s  = halfedges.size();
+        int64_t s  = halfedges.size();
         if (b == s) {
             halfedges.push_back(a);
         } else if (b < s) {

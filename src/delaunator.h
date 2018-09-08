@@ -5,12 +5,12 @@
 #include <memory>
 
 struct DelaunatorPoint {
-    long int i;
+    int64_t i;
     double x;
     double y;
-    long int t;
-    long int prev;
-    long int next;
+    int64_t t;
+    int64_t prev;
+    int64_t next;
     bool removed;
 };
 
@@ -18,8 +18,8 @@ class Delaunator{
     public:
         Delaunator(std::vector<double>& in_coords);
     
-        std::vector<unsigned long int>  triangles;
-        std::vector<long int>           halfedges;
+        std::vector<uint64_t>  triangles;
+        std::vector<int64_t>           halfedges;
         std::vector<double>             coords;
     
     private:
@@ -28,8 +28,8 @@ class Delaunator{
     
         double                          m_center_x;
         double                          m_center_y;
-        long int                        m_hash_size;
-        long int                        m_hull_index;
+        int64_t                        m_hash_size;
+        int64_t                        m_hull_index;
     
         std::vector<int>                m_hash;
         std::vector<DelaunatorPoint>    m_hl;
@@ -39,18 +39,18 @@ class Delaunator{
     private:
     
         double      pseudo_angle(const double dx, const double dy);
-        long int    insert_node(long int i);
-        long int    insert_node(long int i, long int prev);
-        long int    hash_key(double x, double y);
-        void        hash_edge(long int e);
+        int64_t    insert_node(int64_t i);
+        int64_t    insert_node(int64_t i, int64_t prev);
+        int64_t    hash_key(double x, double y);
+        void        hash_edge(int64_t e);
     
-        long int    add_triangle(
-            long int i0, long int i1, long int i2,
-            long int a, long int b, long int c
+        int64_t    add_triangle(
+            int64_t i0, int64_t i1, int64_t i2,
+            int64_t a, int64_t b, int64_t c
         );
     
-        void        link(long int a, long int b);
-        long int    legalize(long int a, long int &e);
-        long int    remove_node(long int node);
+        void        link(int64_t a, int64_t b);
+        int64_t    legalize(int64_t a, int64_t &e);
+        int64_t    remove_node(int64_t node);
     
 };
