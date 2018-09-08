@@ -6,7 +6,6 @@
 #include <tuple>
 #include <stdexcept>
 #include <cmath>
-// #include "prettyprint.hpp"
 #include <iostream>
 
 using namespace std;
@@ -228,18 +227,6 @@ Delaunator::Delaunator(const vector<double>& coords) : Delaunator()
     const double i2y = coords[2 * i2 + 1];
 
     tie(m_center_x, m_center_y) = circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
-
-    // sort the points by distance from the seed triangle circumcenter
-    // cerr << ids << endl;
-//    const sort_to_center s = {
-//        .cx = m_center_x,
-//        .cy = m_center_y,
-//        .coords = coords
-//    };
-//
-//    sort(ids.begin(), ids.end(), s);
-    // quicksort(ids, coords, 0, n - 1, m_center_x, m_center_y);
-    // cerr << ids << endl;
     
     std::sort(ids.begin(), ids.end(), [&](int64_t i, int64_t j)
     {
