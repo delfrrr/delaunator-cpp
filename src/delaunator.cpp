@@ -49,16 +49,17 @@ namespace {
             return max_double;
         }
     }
-
-    double area(
-        const double px,
-        const double py,
-        const double qx,
-        const double qy,
-        const double rx,
-        const double ry
-    ) {
-        return (qy - py) * (rx - qx) - (qx - px) * (ry - qy);
+ 
+    bool orient(
+                 const double px,
+                 const double py,
+                 const double qx,
+                 const double qy,
+                 const double rx,
+                 const double ry
+                 )
+    {
+        return ((qy - py) * (rx - qx) - (qx - px) * (ry - qy)) < 0.0;
     }
 
     tuple<double, double> circumcenter(
@@ -83,6 +84,7 @@ namespace {
 
         return make_tuple(x, y);
     }
+    
     double compare(
         const vector<double> &coords,
         unsigned long int i,
@@ -104,6 +106,7 @@ namespace {
             return diff3;
         }
     }
+    
     struct sort_to_center {
         double cx;
         double cy;
@@ -208,14 +211,12 @@ Delaunator::Delaunator(vector<double>& in_coords) {
     if (min_radius == max_double) {
         throw runtime_error("not triangulation");;
     }
-
-    if (
-        area(
+    
+    if (orient(
             coords[2 * i0], coords[2 * i0 + 1],
             coords[2 * i1], coords[2 * i1 + 1],
-            coords[2 * i2], coords[2 * i2 + 1]
-        ) < 0
-    ) {
+            coords[2 * i2], coords[2 * i2 + 1]))
+    {
         const double tmp = i1;
         i1 = i2;
         i2 = tmp;
@@ -294,12 +295,12 @@ Delaunator::Delaunator(vector<double>& in_coords) {
         e       = start;
 
         while(
-            area(
+            orient(
                 x, y,
                 m_hull_list[e].x, m_hull_list[e].y,
                 m_hull_list[m_hull_list[e].next].x, m_hull_list[m_hull_list[e].next].y
-            ) >= 0
-        ) {
+            ))
+        {
             e = m_hull_list[e].next;
 
             if (e == start) {
@@ -326,12 +327,12 @@ Delaunator::Delaunator(vector<double>& in_coords) {
         // walk forward through the hull, adding more triangles and flipping recursively
         long int q = m_hull_list[e].next;
         while(
-            area(
+            orient(
                 x, y,
                 m_hull_list[q].x, m_hull_list[q].y,
                 m_hull_list[m_hull_list[q].next].x, m_hull_list[m_hull_list[q].next].y
-            ) < 0
-        ) {
+            ))
+        {
             t = add_triangle(
                 m_hull_list[q].i, i,
                 m_hull_list[m_hull_list[q].next].i, m_hull_list[m_hull_list[q].prev].t,
@@ -342,16 +343,17 @@ Delaunator::Delaunator(vector<double>& in_coords) {
             q = m_hull_list[q].next;
         }
         
-        if (walk_back) {
+        if (walk_back)
+        {
             // walk backward from the other side, adding more triangles and flipping
             q = m_hull_list[e].prev;
             while(
-                area(
+                orient(
                     x, y,
                     m_hull_list[m_hull_list[q].prev].x, m_hull_list[m_hull_list[q].prev].y,
                     m_hull_list[q].x, m_hull_list[q].y
-                ) < 0
-            ) {
+                ))
+            {
                 t = add_triangle(
                     m_hull_list[m_hull_list[q].prev].i, i,
                     m_hull_list[q].i, -1,
