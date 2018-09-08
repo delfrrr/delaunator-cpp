@@ -59,27 +59,6 @@ namespace {
                  const double ry
                  )
     {
-        
-        cout << "orient: " << endl;
-        cout << "px: " << px << " py: " << py << " qx: " << qx << " qy: " << qy << " rx: " << rx << " ry: " << ry << endl;
-        
-        double a = (qy - py) * (rx - qx);
-        double b = (qx - px) * (ry - qy);
-        
-        cout << "a: " << a << " b: " << b << " a - b: " << (a-b) << endl;
-        
-        if(int(a-b) == 9130)
-        {
-            int a = 1;
-        }
-        
-        bool test_res = a - b < 0;
-        bool out_res = (qy - py) * (rx - qx) - (qx - px) * (ry - qy) < 0;
-        
-        cout << "test_res: " << test_res << " out_res: " << out_res<< endl;
-        cout << endl;
-
-        
         return ( (qy - py) * (rx - qx) - (qx - px) * (ry - qy) ) < 0.0;
     }
 
@@ -160,25 +139,34 @@ namespace {
     }
 }
 
-Delaunator::Delaunator(vector<double>& in_coords) {
+Delaunator::Delaunator()
+{
+    m_epilon = std::pow(2,-52);
+}
+
+Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
+{
     coords = move(in_coords);
+    
     const long int n = coords.size() >> 1;
     double max_x = -1 * max_double;
     double max_y = -1 * max_double;
     double min_x = max_double;
     double min_y = max_double;
+    
     vector<long int> ids;
     ids.reserve(n);
-    for (long int i = 0; i < n; i++) {
+    
+    for (long int i = 0; i < n; i++)
+    {
         const double x = coords[2 * i];
         const double y = coords[2 * i + 1];
-        // printf("%f %f", x, y);
 
         if (x < min_x) min_x = x;
         if (y < min_y) min_y = y;
         if (x > max_x) max_x = x;
         if (y > max_y) max_y = y;
-        // ids[i] = i;
+
         ids.push_back(i);
     }
     const double cx = (min_x + max_x) / 2;
@@ -286,15 +274,21 @@ Delaunator::Delaunator(vector<double>& in_coords) {
     triangles.reserve(max_triangles * 3);
     halfedges.reserve(max_triangles * 3);
     add_triangle(i0, i1, i2, -1, -1, -1);
+    
     double xp = NAN;
     double yp = NAN;
-    for (long int k = 0; k < n; k++) {
+   
+    for (long int k = 0; k < ids.size(); k++)
+    {
         const long int i = ids[k];
         const double x = coords[2 * i];
         const double y = coords[2 * i + 1];
-        if (x == xp && y == yp) continue;
+
+        if (k > 0 && std::abs(x - xp) <= m_epilon && std::abs(y - yp) <= m_epilon) continue;
+        
         xp = x;
         yp = y;
+        
         if (
                 (x == i0x && y == i0y) ||
                 (x == i1x && y == i1y) ||

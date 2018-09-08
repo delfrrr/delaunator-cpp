@@ -24,6 +24,8 @@ class Delaunator{
     
     private:
     
+        Delaunator();
+    
         double                          m_center_x;
         double                          m_center_y;
         long int                        m_hash_size;
@@ -31,6 +33,8 @@ class Delaunator{
     
         std::vector<int>                m_hash;
         std::vector<DelaunatorPoint>    m_hl;
+    
+        double                          m_epilon;
  
     private:
     
@@ -48,4 +52,5 @@ class Delaunator{
         void        link(long int a, long int b);
         long int    legalize(long int a, long int &e);
         long int    remove_node(long int node);
+    
 };
