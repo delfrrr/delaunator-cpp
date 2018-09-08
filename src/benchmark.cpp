@@ -16,7 +16,7 @@ int main(int, char* argv[]) {
 
     auto milliseconds = chrono::duration_cast<chrono::milliseconds>(t_end - t_start).count();
 
-    printf("coords=%lu \n", delaunator.coords.size() / 2);
+    printf("coords=%lu \n", coords.size() / 2);
     printf("milliseconds=%lld \n", milliseconds);
     printf("triangles=%lu \n", delaunator.triangles.size());
 

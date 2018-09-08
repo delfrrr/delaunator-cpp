@@ -325,21 +325,21 @@ Delaunator::Delaunator(const vector<double>& coords) : Delaunator()
         
         // walk forward through the hull, adding more triangles and flipping recursively
         int64_t q = m_hl[e].next;
-        while(
-            orient(
+        while(orient(
                 x, y,
                 m_hl[q].x, m_hl[q].y,
-                m_hl[m_hl[q].next].x, m_hl[m_hl[q].next].y
-            ))
+                m_hl[m_hl[q].next].x, m_hl[m_hl[q].next].y))
         {
+            
             t = add_triangle(
                 m_hl[q].i, i,
                 m_hl[m_hl[q].next].i, m_hl[m_hl[q].prev].t,
                 -1, m_hl[q].t
             );
-            m_hl[m_hl[q].prev].t = legalize(t + 2,e,coords);
-            m_hull_index = remove_node(q);
-            q = m_hl[q].next;
+            
+            m_hl[m_hl[q].prev].t    = legalize(t + 2,e,coords);
+            m_hull_index            = remove_node(q);
+            q                       = m_hl[q].next;
         }
         
         if (walk_back)
@@ -350,18 +350,18 @@ Delaunator::Delaunator(const vector<double>& coords) : Delaunator()
                 orient(
                     x, y,
                     m_hl[m_hl[q].prev].x, m_hl[m_hl[q].prev].y,
-                    m_hl[q].x, m_hl[q].y
-                ))
+                    m_hl[q].x, m_hl[q].y))
             {
                 t = add_triangle(
                     m_hl[m_hl[q].prev].i, i,
                     m_hl[q].i, -1,
                     m_hl[q].t, m_hl[m_hl[q].prev].t
                 );
+                
                 legalize(t + 2,e,coords);
-                m_hl[m_hl[q].prev].t = t;
-                m_hull_index = remove_node(q);
-                q = m_hl[q].prev;
+                m_hl[m_hl[q].prev].t    = t;
+                m_hull_index            = remove_node(q);
+                q                       = m_hl[q].prev;
             }
         }
         hash_edge(e);
@@ -381,6 +381,22 @@ int64_t Delaunator::legalize(int64_t a, int64_t& e,const std::vector<double>& co
 {
     
     const int64_t b = halfedges[a];
+    
+    /* if the pair of triangles doesn't satisfy the Delaunay condition
+     * (p1 is inside the circumcircle of [p0, pl, pr]), flip them,
+     * then do the same check/flip recursively for the new pair of triangles
+     *
+     *           pl                    pl
+     *          /||\                  /  \
+     *       al/ || \bl            al/    \a
+     *        /  ||  \              /      \
+     *       /  a||b  \    flip    /___ar___\
+     *     p0\   ||   /p1   =>   p0\---bl---/p1
+     *        \  ||  /              \      /
+     *       ar\ || /br             b\    /br
+     *          \||/                  \  /
+     *           pr                    pr
+     */
 
     const int64_t a0 = a - a % 3;
     const int64_t b0 = b - b % 3;
