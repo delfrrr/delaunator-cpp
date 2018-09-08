@@ -21,11 +21,19 @@ class Delaunator{
         std::vector<long int> halfedges;
         std::vector<double> coords;
     private:
+    
         double m_center_x;
         double m_center_y;
         long int m_hash_size;
+        long int m_hull_index;
+    
         std::vector<int> m_hash;
-        std::vector<DelaunatorPoint> m_hull;
+        std::vector<DelaunatorPoint> m_hull_list;
+    
+    
+    private:
+    
+        double pseudo_angle(const double dx, const double dy);
         long int insert_node(long int i);
         long int insert_node(long int i, long int prev);
         long int hash_key(double x, double y);
@@ -35,6 +43,6 @@ class Delaunator{
             long int a, long int b, long int c
         );
         void link(long int a, long int b);
-        long int legalize(long int a);
+        long int legalize(long int a, long int &e);
         long int remove_node(long int node);
 };
