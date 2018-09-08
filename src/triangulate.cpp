@@ -70,7 +70,7 @@ int main(int, char* argv[]) {
     const char* output = argv[2];
     string json = json_helpers::read_file(filename);
     const vector<double> coords = json_helpers::get_geo_json_points(json);
-    Delaunator delaunator(move(coords));
+    Delaunator delaunator(coords);
     const char* out_json = serialize_to_json(delaunator).c_str();
 
     if (output) {

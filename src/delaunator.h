@@ -26,10 +26,10 @@ class Delaunator{
     
         Delaunator();
     
-        double                          m_center_x;
-        double                          m_center_y;
-        int64_t                        m_hash_size;
-        int64_t                        m_hull_index;
+        double      m_center_x;
+        double      m_center_y;
+        int64_t     m_hash_size;
+        int64_t     m_hull_index;
     
         std::vector<int>                m_hash;
         std::vector<DelaunatorPoint>    m_hl;
@@ -39,9 +39,9 @@ class Delaunator{
     private:
     
         double      pseudo_angle(const double dx, const double dy);
-        int64_t    insert_node(int64_t i,const std::vector<double>& coords);
-        int64_t    insert_node(int64_t i, int64_t prev,const std::vector<double>& coords);
-        int64_t    hash_key(double x, double y);
+        int64_t     insert_node(int64_t i,const std::vector<double>& coords);
+        int64_t     insert_node(int64_t i, int64_t prev,const std::vector<double>& coords);
+        int64_t     hash_key(double x, double y);
         void        hash_edge(int64_t e);
     
         int64_t    add_triangle(

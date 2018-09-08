@@ -5,4 +5,4 @@ os: linux
 install:
 - cmake -DCMAKE_BUILD_TYPE=Release
 - VERBOSE=1 make
-script: ./delaunator-test
+script: ./test/src/delaunator-test
