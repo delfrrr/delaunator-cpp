@@ -387,6 +387,8 @@ long int Delaunator::legalize(long int a, long int& e)
     const long int al = a0 + (a + 1) % 3;
     const long int ar = a0 + (a + 2) % 3;
     const long int bl = b0 + (b + 2) % 3;
+    
+    if (b == -1) return ar;
 
     const long int p0 = triangles[ar];
     const long int pr = triangles[a];
