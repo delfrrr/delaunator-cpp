@@ -16,11 +16,11 @@ struct DelaunatorPoint {
 
 class Delaunator{
     public:
-        Delaunator(std::vector<double>& in_coords);
+    
+        Delaunator(const std::vector<double>& in_coords);
     
         std::vector<uint64_t>  triangles;
-        std::vector<int64_t>           halfedges;
-        std::vector<double>             coords;
+        std::vector<int64_t>   halfedges;
     
     private:
     
@@ -39,8 +39,8 @@ class Delaunator{
     private:
     
         double      pseudo_angle(const double dx, const double dy);
-        int64_t    insert_node(int64_t i);
-        int64_t    insert_node(int64_t i, int64_t prev);
+        int64_t    insert_node(int64_t i,const std::vector<double>& coords);
+        int64_t    insert_node(int64_t i, int64_t prev,const std::vector<double>& coords);
         int64_t    hash_key(double x, double y);
         void        hash_edge(int64_t e);
     
@@ -50,7 +50,7 @@ class Delaunator{
         );
     
         void        link(int64_t a, int64_t b);
-        int64_t    legalize(int64_t a, int64_t &e);
-        int64_t    remove_node(int64_t node);
+        int64_t     legalize(int64_t a, int64_t& e,const std::vector<double>& coords);
+        int64_t     remove_node(int64_t node);
     
 };

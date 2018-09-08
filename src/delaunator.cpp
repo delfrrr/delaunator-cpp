@@ -106,15 +106,6 @@ namespace {
             return diff3;
         }
     }
-    
-    struct sort_to_center {
-        double cx;
-        double cy;
-        vector<double> &coords;
-        bool operator() (int64_t i, int64_t j) {
-            return compare(coords, i, j, cx, cy) < 0;
-        }
-    };
 
     bool in_circle(
         double ax, double ay,
@@ -144,10 +135,8 @@ Delaunator::Delaunator()
     m_epilon = std::pow(2,-52);
 }
 
-Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
+Delaunator::Delaunator(const vector<double>& coords) : Delaunator()
 {
-    coords = move(in_coords);
-    
     const int64_t n = coords.size() >> 1;
     double max_x = -1 * max_double;
     double max_y = -1 * max_double;
@@ -242,14 +231,20 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
 
     // sort the points by distance from the seed triangle circumcenter
     // cerr << ids << endl;
-    const sort_to_center s = {
-        .cx = m_center_x,
-        .cy = m_center_y,
-        .coords = coords
-    };
-    sort(ids.begin(), ids.end(), s);
+//    const sort_to_center s = {
+//        .cx = m_center_x,
+//        .cy = m_center_y,
+//        .coords = coords
+//    };
+//
+//    sort(ids.begin(), ids.end(), s);
     // quicksort(ids, coords, 0, n - 1, m_center_x, m_center_y);
     // cerr << ids << endl;
+    
+    std::sort(ids.begin(), ids.end(), [&](int64_t i, int64_t j)
+    {
+        return compare(coords, i, j, m_center_x, m_center_y) < 0;
+    });
 
     m_hash_size = ceil(sqrt(n));
     m_hash.reserve(m_hash_size);
@@ -257,16 +252,16 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
 
     m_hl.reserve(coords.size());
 
-    m_hull_index = insert_node(i0);
+    m_hull_index = insert_node(i0,coords);
     int64_t e = m_hull_index;
     hash_edge(e);
     m_hl[e].t = 0;
 
-    e = insert_node(i1, e);
+    e = insert_node(i1, e,coords);
     hash_edge(e);
     m_hl[e].t = 1;
 
-    e = insert_node(i2, e);
+    e = insert_node(i2, e,coords);
     hash_edge(e);
     m_hl[e].t = 2;
 
@@ -329,10 +324,10 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
         );
 
         m_hl[e].t = t; // keep track of boundary triangles on the hull
-        e = insert_node(i, e);
+        e = insert_node(i, e,coords);
 
         // recursively flip triangles from the point until they satisfy the Delaunay condition
-        m_hl[e].t = legalize(t + 2,e);
+        m_hl[e].t = legalize(t + 2,e,coords);
         
         // walk forward through the hull, adding more triangles and flipping recursively
         int64_t q = m_hl[e].next;
@@ -348,7 +343,7 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
                 m_hl[m_hl[q].next].i, m_hl[m_hl[q].prev].t,
                 -1, m_hl[q].t
             );
-            m_hl[m_hl[q].prev].t = legalize(t + 2,e);
+            m_hl[m_hl[q].prev].t = legalize(t + 2,e,coords);
             m_hull_index = remove_node(q);
             q = m_hl[q].next;
         }
@@ -369,7 +364,7 @@ Delaunator::Delaunator(vector<double>& in_coords) : Delaunator()
                     m_hl[q].i, -1,
                     m_hl[q].t, m_hl[m_hl[q].prev].t
                 );
-                legalize(t + 2,e);
+                legalize(t + 2,e,coords);
                 m_hl[m_hl[q].prev].t = t;
                 m_hull_index = remove_node(q);
                 q = m_hl[q].prev;
@@ -388,7 +383,7 @@ int64_t Delaunator::remove_node(int64_t node) {
     return m_hl[node].prev;
 }
 
-int64_t Delaunator::legalize(int64_t a, int64_t& e)
+int64_t Delaunator::legalize(int64_t a, int64_t& e,const std::vector<double>& coords)
 {
     
     const int64_t b = halfedges[a];
@@ -419,9 +414,6 @@ int64_t Delaunator::legalize(int64_t a, int64_t& e)
         triangles[a] = p1;
         triangles[b] = p0;
         
-#if false
-        link(a, halfedges[bl]);
-#else
         const int64_t hbl = halfedges[bl];
         // edge swapped on the other side of the hull (rare); fix the halfedge reference
         if (hbl == -1)
@@ -440,21 +432,20 @@ int64_t Delaunator::legalize(int64_t a, int64_t& e)
         }
 
         link(a, hbl);
-#endif
-        
         link(b, halfedges[ar]);
         link(ar, bl);
 
         const int64_t br = b0 + (b + 1) % 3;
 
-        legalize(a,e);
-        return legalize(br,e);
+        legalize(a,e,coords);
+        return legalize(br,e,coords);
     }
     return ar;
 }
 
-int64_t Delaunator::insert_node(int64_t i, int64_t prev) {
-    const int64_t node = insert_node(i);
+int64_t Delaunator::insert_node(int64_t i, int64_t prev,const std::vector<double>& coords)
+{
+    const int64_t node = insert_node(i,coords);
     m_hl[node].next = m_hl[prev].next;
     m_hl[node].prev = prev;
     m_hl[m_hl[node].next].prev = node;
@@ -462,8 +453,10 @@ int64_t Delaunator::insert_node(int64_t i, int64_t prev) {
     return node;
 };
 
-int64_t Delaunator::insert_node(int64_t i) {
+int64_t Delaunator::insert_node(int64_t i,const std::vector<double>& coords)
+{
     int64_t node = m_hl.size();
+    
     DelaunatorPoint p = {
         .i = i,
         .x = coords[2 * i],
@@ -472,6 +465,7 @@ int64_t Delaunator::insert_node(int64_t i) {
         .next = node,
         .removed = false
     };
+    
     m_hl.push_back(move(p));
     return node;
 }
