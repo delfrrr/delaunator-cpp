@@ -315,12 +315,7 @@ Delaunator::Delaunator(vector<double>& in_coords) {
         start   = m_hl[start].prev;
         e       = start;
 
-        while(
-            orient(
-                x, y,
-                m_hl[e].x, m_hl[e].y,
-                m_hl[m_hl[e].next].x, m_hl[m_hl[e].next].y
-            ))
+        while(!orient(x, y,m_hl[e].x, m_hl[e].y,m_hl[m_hl[e].next].x, m_hl[m_hl[e].next].y))
         {
             e = m_hl[e].next;
 
