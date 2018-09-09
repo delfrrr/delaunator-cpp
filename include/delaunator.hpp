@@ -467,8 +467,10 @@ struct Delaunator {
         const double dy = y - m_center_y;
         // use pseudo-angle: a measure that monotonically increases
         // with real angle, but doesn't require expensive trigonometry
-        const double p = 1 - dx / (std::abs(dx) + std::abs(dy));
-        return static_cast<std::size_t>(std::llround(std::floor((2 + (dy < 0 ? -p : p)) / 4 * m_hash_size)));
+        const double p = 1.0 - dx / (std::abs(dx) + std::abs(dy));
+        return static_cast<std::size_t>(std::llround(std::floor(
+            (2.0 + (dy < 0.0 ? -p : p)) / 4.0 * static_cast<double>(m_hash_size) //TODO:is this conversion save?
+        )));
     }
 
     void hash_edge(std::size_t e) {
