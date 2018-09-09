@@ -192,9 +192,9 @@ struct Delaunator {
         const double cy = (min_y + max_y) / 2;
         double min_dist = std::numeric_limits<double>::max();
 
-        std::size_t i0;
-        std::size_t i1;
-        std::size_t i2;
+        std::size_t i0 = INVALID_INDEX;
+        std::size_t i1 = INVALID_INDEX;
+        std::size_t i2 = INVALID_INDEX;
 
         // pick a seed point close to the centroid
         for (std::size_t i = 0; i < n; i++) {
