@@ -17,8 +17,8 @@ TEST_CASE("regular grid")
 {
     std::vector<double> points;
     
-    int w = 10000;
-    int h = 10000;
+    int w = 100;
+    int h = 100;
     
     for(int r = 0; r < h; r++)
     {
