@@ -157,8 +157,8 @@ Delaunator::Delaunator(const vector<double>& coords) : Delaunator()
 
         ids.push_back(i);
     }
-    const double cx = (min_x + max_x) / 2;
-    const double cy = (min_y + max_y) / 2;
+    const double cx = (min_x + max_x) / 2.0;
+    const double cy = (min_y + max_y) / 2.0;
     double min_dist = max_double;
     uint64_t i0;
     uint64_t i1;

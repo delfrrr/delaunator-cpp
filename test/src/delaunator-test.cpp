@@ -13,6 +13,29 @@
 
 using namespace std;
 
+TEST_CASE("regular grid")
+{
+    std::vector<double> points;
+    
+    int w = 10000;
+    int h = 10000;
+    
+    for(int r = 0; r < h; r++)
+    {
+        for(int c = 0; c < w; c++)
+        {
+            points.push_back(c);
+            points.push_back(r);
+        }
+    }
+    
+     Delaunator dn(points);
+    
+     std::cout << "number of triangles: " << dn.triangles.size()/3 << std::endl;
+     std::cout << "number of vertices: " << points.size()/2 << std::endl;
+     CHECK(dn.triangles.size()/3 == (w - 1) * (h - 1) * 2);
+}
+
 TEST_CASE("triangles match JS version ouput", "[Delaunator]")
 {
     std::vector<double> vertex_list_big;
