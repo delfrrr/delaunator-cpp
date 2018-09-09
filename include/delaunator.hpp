@@ -7,6 +7,7 @@
 #include <utility>
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 
 namespace delaunator {
 
@@ -18,7 +19,7 @@ inline double dist(const double ax,
     const double dy = ay - by;
     return dx * dx + dy * dy;
 }
-    
+
 inline double circumradius(const double ax,
                            const double ay,
                            const double bx,
@@ -95,17 +96,17 @@ inline double compare(std::vector<double> const& coords,
 }
 
 struct sort_to_center {
-    
+
     std::vector<double> const& coords;
     double cx;
     double cy;
-    
+
     bool operator() (std::size_t i, std::size_t j) {
         return compare(coords, i, j, cx, cy) < 0;
     }
 };
 
-inline bool in_circle(double ax, 
+inline bool in_circle(double ax,
                       double ay,
                       double bx,
                       double by,
@@ -165,10 +166,10 @@ struct Delaunator {
         m_hull(),
         m_center_x(),
         m_center_y(),
-        m_hash_size() 
+        m_hash_size()
     {
         std::size_t n = coords.size() >> 1;
-        
+
         double max_x = std::numeric_limits<double>::min();
         double max_y = std::numeric_limits<double>::min();
         double min_x = std::numeric_limits<double>::max();
@@ -184,13 +185,13 @@ struct Delaunator {
             if (y < min_y) min_y = y;
             if (x > max_x) max_x = x;
             if (y > max_y) max_y = y;
-            
+
             ids.push_back(i);
         }
         const double cx = (min_x + max_x) / 2;
         const double cy = (min_y + max_y) / 2;
         double min_dist = std::numeric_limits<double>::max();
-        
+
         std::size_t i0;
         std::size_t i1;
         std::size_t i2;
@@ -392,7 +393,7 @@ struct Delaunator {
         }
 
     }
-    
+
     std::size_t remove_node(std::size_t node) {
         m_hull[m_hull[node].prev].next = m_hull[node].next;
         m_hull[m_hull[node].next].prev = m_hull[node].prev;

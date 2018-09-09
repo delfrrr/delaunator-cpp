@@ -12,3 +12,6 @@ cmake-build
 out
 node_modules
 mason_packages
+.toolchain
+.mason
+local.env
