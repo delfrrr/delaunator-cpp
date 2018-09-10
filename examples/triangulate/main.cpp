@@ -6,7 +6,6 @@
 #include <fstream>
 #include <vector>
 #include <initializer_list>
-// #include "prettyprint.hpp"
 #include <iostream>
 
 std::string serialize_to_json(delaunator::Delaunator const& delaunator) {
