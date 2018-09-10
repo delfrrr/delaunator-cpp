@@ -1,6 +1,6 @@
 #include <delaunator.hpp>
 #include <catch.hpp>
-#include "test_utils.hpp"
+#include "../examples/utils.hpp"
 
 namespace {
     void validate(const std::vector<double> &coords) {
@@ -19,10 +19,10 @@ namespace {
 }
 
 TEST_CASE("triangles match JS version ouput", "[Delaunator]") {
-    std::string points_str = test_utils::read_file("./test/test-files/playgrounds-1356-epsg-3857.geojson");
-    std::string triangles_str = test_utils::read_file("./test/test-files/playgrounds-1356-triangles.json");
-    std::vector<double> coords = test_utils::get_geo_json_points(points_str);
-    std::vector<double> triangles = test_utils::get_array_points(triangles_str);
+    std::string points_str = utils::read_file("./test/test-files/playgrounds-1356-epsg-3857.geojson");
+    std::string triangles_str = utils::read_file("./test/test-files/playgrounds-1356-triangles.json");
+    std::vector<double> coords = utils::get_geo_json_points(points_str);
+    std::vector<double> triangles = utils::get_array_points(triangles_str);
     delaunator::Delaunator delaunator(coords);
 
     SECTION("length of triangles is the same") {
@@ -30,7 +30,7 @@ TEST_CASE("triangles match JS version ouput", "[Delaunator]") {
     }
 
     SECTION("values are the same") {
-        for(size_t i = 0; i < triangles.size(); i++)
+        for(std::size_t i = 0; i < triangles.size(); i++)
         {
             REQUIRE(delaunator.triangles[i] == Approx(triangles[i]));
         }

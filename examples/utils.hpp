@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include "rapidjson/document.h"
 
-namespace test_utils {
+namespace utils {
 
 std::string read_file(const char* filename) {
     std::ifstream input_file(filename);
@@ -53,4 +53,4 @@ std::vector<double> get_array_points(std::string const& json) {
 
 }
 
-} // end ns test_utils
+} // end ns utils

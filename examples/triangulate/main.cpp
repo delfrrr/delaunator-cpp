@@ -1,7 +1,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include <delaunator.hpp>
-#include "../../test/test_utils.hpp"
+#include "../utils.hpp"
 #include <cstdio>
 #include <fstream>
 #include <vector>
@@ -62,8 +62,8 @@ std::string serialize_to_json(delaunator::Delaunator const& delaunator) {
 int main(int, char* argv[]) {
     const char* filename = argv[1];
     const char* output = argv[2];
-    std::string json = test_utils::read_file(filename);
-    std::vector<double> coords = test_utils::get_geo_json_points(json);
+    std::string json = utils::read_file(filename);
+    std::vector<double> coords = utils::get_geo_json_points(json);
     delaunator::Delaunator delaunator(coords);
     const char* out_json = serialize_to_json(delaunator).c_str();
 
