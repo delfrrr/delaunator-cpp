@@ -1,7 +1,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include <delaunator.hpp>
-#include "../utils.hpp"
+#include "./utils.hpp"
 #include <cstdio>
 #include <fstream>
 #include <vector>

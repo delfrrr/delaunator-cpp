@@ -51,8 +51,9 @@ find_package(Threads REQUIRED)
 file(GLOB BENCH_SOURCES bench/*.cpp)
 add_executable(bench-tests ${BENCH_SOURCES})
 
-file(GLOB TRIANGULATE_SOURCES examples/triangulate/*.cpp)
-add_executable(triangulate ${TRIANGULATE_SOURCES})
+#examples
+add_executable(triangulate-geojson examples/triangulate_geojson.cpp)
+add_executable(basic examples/basic.cpp)
 
 
 # link benchmark static library to the bench-tests binary so the bench tests know where to find the benchmark impl code
