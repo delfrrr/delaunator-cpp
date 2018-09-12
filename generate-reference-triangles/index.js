@@ -26,6 +26,9 @@ console.log('points =', coords.length / 2);
 console.log('miliseconds =', end - start);
 console.log('triangles =', delaunator.triangles.length);
 
-const trianglesAr = Array.from(delaunator.triangles);
-writeFileSync(outputFile, JSON.stringify(trianglesAr));
+if (outputFile) {
+    console.log('Saving to', outputFile)
+    const trianglesAr = Array.from(delaunator.triangles);
+    writeFileSync(outputFile, JSON.stringify(trianglesAr));
+}
 
