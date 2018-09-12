@@ -5,5 +5,5 @@ Generating reference datasets using original https://github.com/mapbox/delaunato
 
 ```
 npm i
-./index.js ../test-files/playgrounds-1356-epsg-3857.geojson ../test-files/playgrounds-1356-triangles.json
+./index.js ../test/test-files/playgrounds-1356-epsg-3857.geojson ../test/test-files/playgrounds-1356-triangles.json
 ```

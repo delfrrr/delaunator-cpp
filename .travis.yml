@@ -1,8 +1,56 @@
-language: cpp
-dist: trusty
-compiler: clang++
-os: linux
+language: generic
+
+matrix:
+  include:
+    # clang-format specific job
+    - os: linux
+      sudo: false
+      env: CLANG_FORMAT
+      addons:
+        apt:
+          sources: [ 'ubuntu-toolchain-r-test' ]
+          packages: [ 'libstdc++6', 'libstdc++-5-dev' ]
+      script:
+        - make format
+    - os: linux
+      sudo: false
+      env: CXX=g++-5
+      addons:
+        apt:
+          sources: [ 'ubuntu-toolchain-r-test' ]
+          packages: [ 'g++-5' ]
+    - os: linux
+      sudo: false
+      env: CXX=clang++
+      addons:
+        apt:
+          sources: [ 'ubuntu-toolchain-r-test' ]
+          packages: [ 'libstdc++6', 'libstdc++-5-dev' ]
+    # disabled before fixing https://github.com/delfrrr/delaunator-cpp/issues/5
+    # - os: linux
+    #   sudo: required # workaround https://github.com/mapbox/node-cpp-skel/issues/93
+    #   env: CXXFLAGS="-fsanitize=address,undefined,integer -fno-sanitize-recover=all"
+    #   addons:
+    #     apt:
+    #       sources: [ 'ubuntu-toolchain-r-test' ]
+    #       packages: [ 'libstdc++6', 'libstdc++-5-dev' ]
+env:
+  global:
+   - CMAKE_VERSION="3.8.2"
+
 install:
-- cmake -DCMAKE_BUILD_TYPE=Release
-- VERBOSE=1 make
-script: ./delaunator-test
+  # set up the environment by installing mason and clang++
+  - ./scripts/setup.sh --config local.env
+  # put mason and clang++ on PATH
+  - source local.env
+  - mason install cmake ${CMAKE_VERSION}
+  - mason link cmake ${CMAKE_VERSION}
+  - which cmake
+
+script:
+  - make release
+  - make test
+  - make clean
+  - make debug
+  - make test
+  - make clean
