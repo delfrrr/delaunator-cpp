@@ -16,4 +16,4 @@ void BM_45K_geojson_nodes(benchmark::State& state) {
 
 BENCHMARK(BM_45K_geojson_nodes)->Unit(benchmark::kMillisecond);
 
-BENCHMARK_MAIN();
+BENCHMARK_MAIN()

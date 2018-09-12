@@ -11,7 +11,7 @@ delaunator-cpp is a C++ port from https://github.com/mapbox/delaunator a JavaScr
 ## Features
 
 * Probably the fastest C++ open source 2D Delaunay implementation
-* Roughly 20 times faster then JS version.
+* Roughly 6 times faster then JS version (more improvements are coming).
 * Example showing triangulation of GeoJson points
 
 ## Usage
