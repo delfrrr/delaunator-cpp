@@ -1,5 +1,9 @@
+#pragma once
+
 #include <fstream>
 #include <stdexcept>
+#include <string>
+#include <vector>
 #include "rapidjson/document.h"
 
 namespace utils {

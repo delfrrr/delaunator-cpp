@@ -38,6 +38,6 @@ distclean: clean
 	rm -f local.env
 
 format:
-	@echo "not implmented"
+	./scripts/format.sh
 
 .PHONY: test bench
