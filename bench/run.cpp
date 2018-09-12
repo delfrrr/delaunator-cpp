@@ -4,7 +4,7 @@
 #include "../examples/utils.hpp"
 
 namespace {
-    void BM_simple(benchmark::State& state)
+    void BM_45K_geojson_nodes(benchmark::State& state)
     {
         std::string points_str = utils::read_file("./test/test-files/osm-nodes-45331-epsg-3857.geojson");
         std::vector<double> coords = utils::get_geo_json_points(points_str);
@@ -16,11 +16,6 @@ namespace {
     }
 }
 
-int main(int argc, char* argv[])
-{
-    benchmark::RegisterBenchmark("BM_simple", BM_simple);
-    benchmark::Initialize(&argc, argv);
-    benchmark::RunSpecifiedBenchmarks();
+BENCHMARK(BM_45K_geojson_nodes)->Unit(benchmark::kMillisecond);
 
-    return 0;
-}
+BENCHMARK_MAIN();
