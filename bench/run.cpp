@@ -1,8 +1,8 @@
 #include "../examples/utils.hpp"
 #include <benchmark/benchmark.h>
 #include <delaunator.hpp>
-#include <string>
 #include <random>
+#include <string>
 #include <vector>
 
 std::vector<double> generate_uniform(size_t n) {
