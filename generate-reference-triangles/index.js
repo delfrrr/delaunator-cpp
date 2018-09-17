@@ -23,7 +23,7 @@ const delaunator = new Delaunator(coords);
 const end = Date.now();
 
 console.log('points =', coords.length / 2);
-console.log('miliseconds =', end - start);
+console.log('milliseconds =', end - start);
 console.log('triangles =', delaunator.triangles.length);
 
 if (outputFile) {

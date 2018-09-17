@@ -165,6 +165,7 @@ public:
 private:
     std::vector<std::size_t> m_hash;
     std::vector<DelaunatorPoint> m_hull;
+    std::size_t m_hull_entry;
     double m_center_x;
     double m_center_y;
     std::size_t m_hash_size;
@@ -279,20 +280,21 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
     std::tie(m_center_x, m_center_y) = circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
 
     // sort the points by distance from the seed triangle circumcenter
-    // cerr << ids << endl;
     std::sort(ids.begin(), ids.end(), sort_to_center{ coords, m_center_x, m_center_y });
-    // quicksort(ids, coords, 0, n - 1, m_center_x, m_center_y);
-    // cerr << ids << endl;
 
+    // initialize a hash table for storing edges of the advancing convex hull
     m_hash_size = static_cast<std::size_t>(std::llround(std::ceil(std::sqrt(n))));
     m_hash.reserve(m_hash_size);
     for (std::size_t i = 0; i < m_hash_size; i++) {
         m_hash.push_back(INVALID_INDEX);
     }
 
+    // initialize a circular doubly-linked list that will hold an advancing convex hull
+    // doubly-linked list is stored as plain vector
+    // vertices are linked via ineces of next/prev vertice
     m_hull.reserve(coords.size());
-
     std::size_t e = insert_node(i0);
+    m_hull_entry = e;
     hash_edge(e);
     m_hull[e].t = 0;
 
@@ -360,9 +362,7 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
 
         // recursively flip triangles from the point until they satisfy the Delaunay condition
         m_hull[e].t = legalize(t + 2);
-        if (m_hull[m_hull[m_hull[e].prev].prev].t == halfedges[t + 1]) {
-            m_hull[m_hull[m_hull[e].prev].prev].t = t + 2;
-        }
+
         // walk forward through the hull, adding more triangles and flipping recursively
         std::size_t q = m_hull[e].next;
         while (
@@ -371,7 +371,7 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
             t = add_triangle(
                 m_hull[q].i, i, m_hull[m_hull[q].next].i, m_hull[m_hull[q].prev].t, INVALID_INDEX, m_hull[q].t);
             m_hull[m_hull[q].prev].t = legalize(t + 2);
-            remove_node(q);
+            m_hull_entry = remove_node(q);
             q = m_hull[q].next;
         }
         if (walk_back) {
@@ -384,7 +384,7 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
                     m_hull[m_hull[q].prev].i, i, m_hull[q].i, INVALID_INDEX, m_hull[q].t, m_hull[m_hull[q].prev].t);
                 legalize(t + 2);
                 m_hull[m_hull[q].prev].t = t;
-                remove_node(q);
+                m_hull_entry = remove_node(q);
                 q = m_hull[q].prev;
             }
         }
@@ -403,6 +403,21 @@ std::size_t Delaunator::remove_node(std::size_t node) {
 std::size_t Delaunator::legalize(std::size_t a) {
     std::size_t b = halfedges[a];
 
+    /* if the pair of triangles doesn't satisfy the Delaunay condition
+    * (p1 is inside the circumcircle of [p0, pl, pr]), flip them,
+    * then do the same check/flip recursively for the new pair of triangles
+    *
+    *           pl                    pl
+    *          /||\                  /  \
+    *       al/ || \bl            al/    \a
+    *        /  ||  \              /      \
+    *       /  a||b  \    flip    /___ar___\
+    *     p0\   ||   /p1   =>   p0\---bl---/p1
+    *        \  ||  /              \      /
+    *       ar\ || /br             b\    /br
+    *          \||/                  \  /
+    *           pr                    pr
+    */
     std::size_t a0 = a - a % 3;
     std::size_t b0 = b - b % 3;
 
@@ -416,12 +431,33 @@ std::size_t Delaunator::legalize(std::size_t a) {
     std::size_t p1 = triangles[bl];
 
     const bool illegal = in_circle(
-        coords[2 * p0], coords[2 * p0 + 1], coords[2 * pr], coords[2 * pr + 1], coords[2 * pl], coords[2 * pl + 1], coords[2 * p1], coords[2 * p1 + 1]);
+        coords[2 * p0],
+        coords[2 * p0 + 1],
+        coords[2 * pr],
+        coords[2 * pr + 1],
+        coords[2 * pl],
+        coords[2 * pl + 1],
+        coords[2 * p1],
+        coords[2 * p1 + 1]);
 
     if (illegal) {
         triangles[a] = p1;
         triangles[b] = p0;
-        link(a, halfedges[bl]);
+
+        auto hbl = halfedges[bl];
+
+        // edge swapped on the other side of the hull (rare); fix the halfedge reference
+        if (hbl == INVALID_INDEX) {
+            std::size_t e = m_hull_entry;
+            do {
+                if (m_hull[e].t == bl) {
+                    m_hull[e].t = a;
+                    break;
+                }
+                e = m_hull[e].next;
+            } while (e != m_hull_entry);
+        }
+        link(a, hbl);
         link(b, halfedges[ar]);
         link(ar, bl);
 
