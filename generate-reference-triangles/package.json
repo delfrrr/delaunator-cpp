@@ -3,6 +3,6 @@
   "private": true,
   "main": "index.js",
   "dependencies": {
-    "delaunator": "^2.0.2"
+    "delaunator": "2.0.3"
   }
 }

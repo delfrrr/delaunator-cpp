@@ -1,0 +1,4 @@
+Run on (4 X 2300 MHz CPU s)
+2018-09-18 07:36:59
+name,iterations,real_time,cpu_time,time_unit,bytes_per_second,items_per_second,label,error_occurred,error_message
+"BM_45K_geojson_nodes",32,22.7033,22.4578,ms,,,,,

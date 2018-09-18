@@ -141,6 +141,12 @@ inline bool check_pts_equal(double x1, double y1, double x2, double y2) {
            std::fabs(y1 - y2) < std::numeric_limits<double>::epsilon();
 }
 
+// monotonically increases with real angle, but doesn't need expensive trigonometry
+inline double pseudo_angle(double dx, double dy) {
+    const double p = dx / (std::abs(dx) + std::abs(dy));
+    return (dy > 0.0 ? 3.0 - p : 1.0 + p) / 4.0; // [0..1)
+}
+
 constexpr std::size_t INVALID_INDEX = std::numeric_limits<std::size_t>::max();
 
 struct DelaunatorPoint {
@@ -335,6 +341,7 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
             (start == INVALID_INDEX || m_hull[start].removed) &&
             (key != start_key));
 
+        start = m_hull[start].prev;
         e = start;
 
         while (
@@ -497,12 +504,9 @@ std::size_t Delaunator::insert_node(std::size_t i, std::size_t prev) {
 std::size_t Delaunator::hash_key(double x, double y) {
     const double dx = x - m_center_x;
     const double dy = y - m_center_y;
-    // use pseudo-angle: a measure that monotonically increases
-    // with real angle, but doesn't require expensive trigonometry
-    const double p = 1.0 - dx / (std::abs(dx) + std::abs(dy));
-    return static_cast<std::size_t>(std::llround(std::floor(
-        (2.0 + (dy < 0.0 ? -p : p)) / 4.0 * static_cast<double>(m_hash_size) //TODO:is this conversion save?
-        )));
+    return static_cast<std::size_t>(std::llround(
+        std::floor(pseudo_angle(dx, dy) * static_cast<double>(m_hash_size))
+    ));
 }
 
 void Delaunator::hash_edge(std::size_t e) {
