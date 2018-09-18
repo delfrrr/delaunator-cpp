@@ -192,6 +192,7 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
       halfedges(),
       m_hash(),
       m_hull(),
+      m_hull_entry(),
       m_center_x(),
       m_center_y(),
       m_hash_size() {
