@@ -450,9 +450,9 @@ std::size_t Delaunator::legalize(std::size_t a) {
     const std::size_t pl = triangles[al];
     const std::size_t p1 = triangles[bl];
 
-    // if (b == INVALID_INDEX) {
-    //     return ar;
-    // }
+    if (b == INVALID_INDEX) {
+        return ar;
+    }
 
     const bool illegal = in_circle(
         coords[2 * p0],
