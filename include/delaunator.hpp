@@ -168,6 +168,8 @@ public:
 
     Delaunator(std::vector<double> const& in_coords);
 
+    double get_hull_area();
+
 private:
     std::vector<std::size_t> m_hash;
     std::vector<DelaunatorPoint> m_hull;
@@ -401,6 +403,16 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
     }
 }
 
+double Delaunator::get_hull_area() {
+    double hull_area = 0;
+    size_t e = m_hull_entry;
+    do {
+        hull_area += (m_hull[e].x - m_hull[m_hull[e].prev].x) * (m_hull[e].y + m_hull[m_hull[e].prev].y);
+        e = m_hull[e].next;
+    } while (e != m_hull_entry);
+    return hull_area;
+}
+
 std::size_t Delaunator::remove_node(std::size_t node) {
     m_hull[m_hull[node].prev].next = m_hull[node].next;
     m_hull[m_hull[node].next].prev = m_hull[node].prev;
@@ -409,7 +421,7 @@ std::size_t Delaunator::remove_node(std::size_t node) {
 }
 
 std::size_t Delaunator::legalize(std::size_t a) {
-    std::size_t b = halfedges[a];
+    const std::size_t b = halfedges[a];
 
     /* if the pair of triangles doesn't satisfy the Delaunay condition
     * (p1 is inside the circumcircle of [p0, pl, pr]), flip them,
@@ -426,17 +438,21 @@ std::size_t Delaunator::legalize(std::size_t a) {
     *          \||/                  \  /
     *           pr                    pr
     */
-    std::size_t a0 = a - a % 3;
-    std::size_t b0 = b - b % 3;
+    const std::size_t a0 = a - a % 3;
+    const std::size_t b0 = b - b % 3;
 
-    std::size_t al = a0 + (a + 1) % 3;
-    std::size_t ar = a0 + (a + 2) % 3;
-    std::size_t bl = b0 + (b + 2) % 3;
+    const std::size_t al = a0 + (a + 1) % 3;
+    const std::size_t ar = a0 + (a + 2) % 3;
+    const std::size_t bl = b0 + (b + 2) % 3;
 
-    std::size_t p0 = triangles[ar];
-    std::size_t pr = triangles[a];
-    std::size_t pl = triangles[al];
-    std::size_t p1 = triangles[bl];
+    const std::size_t p0 = triangles[ar];
+    const std::size_t pr = triangles[a];
+    const std::size_t pl = triangles[al];
+    const std::size_t p1 = triangles[bl];
+
+    // if (b == INVALID_INDEX) {
+    //     return ar;
+    // }
 
     const bool illegal = in_circle(
         coords[2 * p0],

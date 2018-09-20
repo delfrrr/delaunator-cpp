@@ -1,5 +1,6 @@
 #include "../examples/utils.hpp"
 #include <catch.hpp>
+#include <cmath>
 #include <delaunator.hpp>
 
 namespace {
@@ -13,6 +14,22 @@ void validate(const std::vector<double>& coords) {
                 (i2 != delaunator::INVALID_INDEX) && (d.halfedges[i2] != i)));
         }
     }
+
+    SECTION("validate triangulation") {
+        double hull_area = d.get_hull_area();
+        double triangles_area = 0.0;
+
+        for (size_t i = 0; i < d.triangles.size(); i += 3) {
+            const double ax = coords[2 * d.triangles[i]];
+            const double ay = coords[2 * d.triangles[i] + 1];
+            const double bx = coords[2 * d.triangles[i + 1]];
+            const double by = coords[2 * d.triangles[i + 1] + 1];
+            const double cx = coords[2 * d.triangles[i + 2]];
+            const double cy = coords[2 * d.triangles[i + 2] + 1];
+            triangles_area += std::fabs((by - ay) * (cx - bx) - (bx - ax) * (cy - by));
+        }
+        REQUIRE(triangles_area == Approx(hull_area));
+    }
 }
 } // namespace
 
@@ -20,7 +37,7 @@ TEST_CASE("triangles match JS version ouput", "[Delaunator]") {
     std::string points_str = utils::read_file("./test/test-files/playgrounds-1356-epsg-3857.geojson");
     std::string triangles_str = utils::read_file("./test/test-files/playgrounds-1356-triangles.json");
     std::vector<double> coords = utils::get_geo_json_points(points_str);
-    std::vector<double> triangles = utils::get_array_points(triangles_str);
+    std::vector<size_t> triangles = utils::get_array_points<size_t>(triangles_str);
     delaunator::Delaunator delaunator(coords);
 
     SECTION("length of triangles is the same") {
@@ -29,7 +46,7 @@ TEST_CASE("triangles match JS version ouput", "[Delaunator]") {
 
     SECTION("values are the same") {
         for (std::size_t i = 0; i < triangles.size(); i++) {
-            REQUIRE(delaunator.triangles[i] == Approx(triangles[i]));
+            REQUIRE(delaunator.triangles[i] == triangles[i]);
         }
     }
 }
@@ -46,5 +63,10 @@ TEST_CASE("mapbox/delaunator/issues/11", "[Delaunator]") {
 
 TEST_CASE("mapbox/delaunator/issues/24", "[Delaunator]") {
     std::vector<double> coords = { 382, 302, 382, 328, 382, 205, 623, 175, 382, 188, 382, 284, 623, 87, 623, 341, 141, 227 };
+    validate(coords);
+}
+
+TEST_CASE("mapbox/delaunator/issues/13", "[Delaunator]") {
+    std::vector<double> coords = { 4, 1, 3.7974166882130675, 2.0837249985614585, 3.2170267516619773, 3.0210869309396715, 2.337215067329615, 3.685489874065187, 1.276805078389906, 3.9872025288851036, 0.17901102978375127, 3.885476929518457, -0.8079039091377689, 3.3940516818407187, -1.550651407188842, 2.5792964886320684, -1.9489192990517052, 1.5512485534497125, -1.9489192990517057, 0.44875144655029087, -1.5506514071888438, -0.5792964886320653, -0.8079039091377715, -1.394051681840717, 0.17901102978374794, -1.8854769295184561, 1.276805078389902, -1.987202528885104, 2.337215067329611, -1.6854898740651891, 3.217026751661974, -1.021086930939675, 3.7974166882130653, -0.08372499856146409 };
     validate(coords);
 }

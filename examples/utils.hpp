@@ -8,7 +8,7 @@
 
 namespace utils {
 
-std::string read_file(const char* filename) {
+inline std::string read_file(const char* filename) {
     std::ifstream input_file(filename);
     if(input_file.good()) {
         std::string json_str(
@@ -22,7 +22,7 @@ std::string read_file(const char* filename) {
     }
 }
 
-std::vector<double> get_geo_json_points(std::string const& json) {
+inline std::vector<double> get_geo_json_points(std::string const& json) {
     rapidjson::Document document;
     if(document.Parse(json.c_str()).HasParseError()) {
         throw std::runtime_error("Cannot parse JSON");
@@ -40,8 +40,22 @@ std::vector<double> get_geo_json_points(std::string const& json) {
     return coords;
 }
 
-std::vector<double> get_array_points(std::string const& json) {
-    std::vector<double> points;
+template <typename T>
+inline T get_json_value(const rapidjson::Value &v);
+
+template <>
+inline double get_json_value(const rapidjson::Value &v) {
+    return v.GetDouble();
+}
+
+template <>
+inline size_t get_json_value(const rapidjson::Value &v) {
+    return static_cast<size_t>(v.GetUint64());
+}
+
+template <typename T>
+inline std::vector<T> get_array_points(std::string const& json) {
+    std::vector<T> points;
     rapidjson::Document document;
     if(document.Parse(json.c_str()).HasParseError()) {
         throw std::runtime_error("Cannot parse JSON");
@@ -51,10 +65,10 @@ std::vector<double> get_array_points(std::string const& json) {
     }
     points.reserve(static_cast<std::size_t>(document.Size()));
     for(rapidjson::SizeType i = 0; i < document.Size(); i++) {
-        points.push_back(document[i].GetDouble());
+        // points.push_back(document[i].GetDouble());
+        points.push_back(get_json_value<T>(document[i]));
     }
     return points;
-
 }
 
 } // end ns utils
