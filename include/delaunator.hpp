@@ -154,8 +154,8 @@ constexpr double EPSILON = std::numeric_limits<double>::epsilon();
 constexpr std::size_t INVALID_INDEX = std::numeric_limits<std::size_t>::max();
 
 inline bool check_pts_equal(double x1, double y1, double x2, double y2) {
-    return std::fabs(x1 - x2) < EPSILON &&
-           std::fabs(y1 - y2) < EPSILON;
+    return std::fabs(x1 - x2) <= EPSILON &&
+           std::fabs(y1 - y2) <= EPSILON;
 }
 
 // monotonically increases with real angle, but doesn't need expensive trigonometry
@@ -344,8 +344,8 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
         const double x = coords[2 * i];
         const double y = coords[2 * i + 1];
 
-        // skip duplicate points
-        if (check_pts_equal(x, y, xp, yp)) continue;
+        // skip near-duplicate points
+        if (k > 0 && check_pts_equal(x, y, xp, yp)) continue;
         xp = x;
         yp = y;
 
