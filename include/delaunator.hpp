@@ -11,6 +11,20 @@
 
 namespace delaunator {
 
+// Kahan and Babuska summation, Neumaier variant; accumulates less FP error
+inline double sum(const std::vector<double>& x) {
+    double sum = x[0];
+    double err = 0.0;
+
+    for (size_t i = 1; i < x.size(); i++) {
+        const double k = x[i];
+        const double m = sum + k;
+        err += std::fabs(sum) >= std::fabs(k) ? sum - m + k : k - m + sum;
+        sum = m;
+    }
+    return sum + err;
+}
+
 inline double dist(
     const double ax,
     const double ay,
@@ -47,14 +61,14 @@ inline double circumradius(
     }
 }
 
-inline double area(
+inline bool orient(
     const double px,
     const double py,
     const double qx,
     const double qy,
     const double rx,
     const double ry) {
-    return (qy - py) * (rx - qx) - (qx - px) * (ry - qy);
+    return (qy - py) * (rx - qx) - (qx - px) * (ry - qy) < 0.0;
 }
 
 inline std::pair<double, double> circumcenter(
@@ -136,9 +150,12 @@ inline bool in_circle(
             ap * (ex * fy - ey * fx)) < 0.0;
 }
 
+constexpr double EPSILON = std::numeric_limits<double>::epsilon();
+constexpr std::size_t INVALID_INDEX = std::numeric_limits<std::size_t>::max();
+
 inline bool check_pts_equal(double x1, double y1, double x2, double y2) {
-    return std::fabs(x1 - x2) < std::numeric_limits<double>::epsilon() &&
-           std::fabs(y1 - y2) < std::numeric_limits<double>::epsilon();
+    return std::fabs(x1 - x2) < EPSILON &&
+           std::fabs(y1 - y2) < EPSILON;
 }
 
 // monotonically increases with real angle, but doesn't need expensive trigonometry
@@ -146,8 +163,6 @@ inline double pseudo_angle(double dx, double dy) {
     const double p = dx / (std::abs(dx) + std::abs(dy));
     return (dy > 0.0 ? 3.0 - p : 1.0 + p) / 4.0; // [0..1)
 }
-
-constexpr std::size_t INVALID_INDEX = std::numeric_limits<std::size_t>::max();
 
 struct DelaunatorPoint {
     std::size_t i;
@@ -270,12 +285,15 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
 
     if (!(min_radius < std::numeric_limits<double>::max())) {
         throw std::runtime_error("not triangulation");
-        ;
     }
 
-    bool coord_area = area(
-                          coords[2 * i0], coords[2 * i0 + 1], coords[2 * i1], coords[2 * i1 + 1], coords[2 * i2], coords[2 * i2 + 1]) < 0.0;
-    if (coord_area) {
+    if (orient(
+            coords[2 * i0], coords[2 * i0 + 1], //
+            coords[2 * i1],
+            coords[2 * i1 + 1], //
+            coords[2 * i2],
+            coords[2 * i2 + 1]) //
+    ) {
         std::swap(i1, i2);
     }
 
@@ -325,14 +343,19 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
         const std::size_t i = ids[k];
         const double x = coords[2 * i];
         const double y = coords[2 * i + 1];
+
+        // skip duplicate points
         if (check_pts_equal(x, y, xp, yp)) continue;
         xp = x;
         yp = y;
+
+        // skip seed triangle points
         if (
             check_pts_equal(x, y, i0x, i0y) ||
             check_pts_equal(x, y, i1x, i1y) ||
             check_pts_equal(x, y, i2x, i2y)) continue;
 
+        // find a visible edge on the convex hull using edge hash
         const std::size_t start_key = hash_key(x, y);
         std::size_t key = start_key;
         std::size_t start = INVALID_INDEX;
@@ -345,16 +368,23 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
 
         start = m_hull[start].prev;
         e = start;
-
-        while (
-            area(
-                x, y, m_hull[e].x, m_hull[e].y, m_hull[m_hull[e].next].x, m_hull[m_hull[e].next].y) >= 0.0) {
+        while (!orient(
+            x, y, //
+            m_hull[e].x,
+            m_hull[e].y,              //
+            m_hull[m_hull[e].next].x, //
+            m_hull[m_hull[e].next].y) //
+        ) {
             e = m_hull[e].next;
 
             if (e == start) {
-                throw std::runtime_error("Something is wrong with the input points.");
+                e = INVALID_INDEX; //TODO: will it work correct?
+                break;
             }
         }
+
+        // likely a near-duplicate point; skip it
+        if (e == INVALID_INDEX) continue;
 
         const bool walk_back = e == start;
 
@@ -375,9 +405,13 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
 
         // walk forward through the hull, adding more triangles and flipping recursively
         std::size_t q = m_hull[e].next;
-        while (
-            area(
-                x, y, m_hull[q].x, m_hull[q].y, m_hull[m_hull[q].next].x, m_hull[m_hull[q].next].y) < 0.0) {
+        while (orient(
+            x, y, //
+            m_hull[q].x,
+            m_hull[q].y, //
+            m_hull[m_hull[q].next].x,
+            m_hull[m_hull[q].next].y //
+            )) {
             t = add_triangle(
                 m_hull[q].i, i, m_hull[m_hull[q].next].i, m_hull[m_hull[q].prev].t, INVALID_INDEX, m_hull[q].t);
             m_hull[m_hull[q].prev].t = legalize(t + 2);
@@ -387,9 +421,13 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
         if (walk_back) {
             // walk backward from the other side, adding more triangles and flipping
             q = m_hull[e].prev;
-            while (
-                area(
-                    x, y, m_hull[m_hull[q].prev].x, m_hull[m_hull[q].prev].y, m_hull[q].x, m_hull[q].y) < 0.0) {
+            while (orient(
+                x, y, //
+                m_hull[m_hull[q].prev].x,
+                m_hull[m_hull[q].prev].y, //
+                m_hull[q].x,
+                m_hull[q].y //
+                )) {
                 t = add_triangle(
                     m_hull[m_hull[q].prev].i, i, m_hull[q].i, INVALID_INDEX, m_hull[q].t, m_hull[m_hull[q].prev].t);
                 legalize(t + 2);
@@ -404,13 +442,13 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
 }
 
 double Delaunator::get_hull_area() {
-    double hull_area = 0;
+    std::vector<double> hull_area;
     size_t e = m_hull_entry;
     do {
-        hull_area += (m_hull[e].x - m_hull[m_hull[e].prev].x) * (m_hull[e].y + m_hull[m_hull[e].prev].y);
+        hull_area.push_back((m_hull[e].x - m_hull[m_hull[e].prev].x) * (m_hull[e].y + m_hull[m_hull[e].prev].y));
         e = m_hull[e].next;
     } while (e != m_hull_entry);
-    return hull_area;
+    return sum(hull_area);
 }
 
 std::size_t Delaunator::remove_node(std::size_t node) {
