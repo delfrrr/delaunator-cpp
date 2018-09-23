@@ -557,7 +557,8 @@ std::size_t Delaunator::hash_key(double x, double y) {
     const double dx = x - m_center_x;
     const double dy = y - m_center_y;
     return static_cast<std::size_t>(std::llround(
-        std::floor(pseudo_angle(dx, dy) * static_cast<double>(m_hash_size))));
+               std::floor(pseudo_angle(dx, dy) * static_cast<double>(m_hash_size)))) %
+           m_hash_size;
 }
 
 void Delaunator::hash_edge(std::size_t e) {
