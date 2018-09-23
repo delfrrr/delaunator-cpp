@@ -5,8 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace {
-std::vector<double> generate_uniform(size_t n) {
+std::vector<double> generate_uniform(std::size_t n) {
     std::vector<double> coords;
     std::srand(350);
     double norm = static_cast<double>(RAND_MAX) / 1e3;
@@ -27,47 +26,14 @@ void BM_45K_geojson_nodes(benchmark::State& state) {
     }
 }
 
-void BM_2K_uniform(benchmark::State& state) {
-    std::vector<double> coords = generate_uniform(2000);
+void BM_uniform(benchmark::State& state) {
+    std::vector<double> coords = generate_uniform(static_cast<std::size_t>(state.range(0)));
     while (state.KeepRunning()) {
         delaunator::Delaunator delaunator(coords);
     }
 }
-
-void BM_100K_uniform(benchmark::State& state) {
-    std::vector<double> coords = generate_uniform(100000);
-    while (state.KeepRunning()) {
-        delaunator::Delaunator delaunator(coords);
-    }
-}
-
-void BM_200K_uniform(benchmark::State& state) {
-    std::vector<double> coords = generate_uniform(200000);
-    while (state.KeepRunning()) {
-        delaunator::Delaunator delaunator(coords);
-    }
-}
-
-void BM_500K_uniform(benchmark::State& state) {
-    std::vector<double> coords = generate_uniform(500000);
-    while (state.KeepRunning()) {
-        delaunator::Delaunator delaunator(coords);
-    }
-}
-
-void BM_1M_uniform(benchmark::State& state) {
-    std::vector<double> coords = generate_uniform(1000000);
-    while (state.KeepRunning()) {
-        delaunator::Delaunator delaunator(coords);
-    }
-}
-} // namespace
 
 BENCHMARK(BM_45K_geojson_nodes)->Unit(benchmark::kMillisecond);
-BENCHMARK(BM_2K_uniform)->Unit(benchmark::kMillisecond);
-BENCHMARK(BM_100K_uniform)->Unit(benchmark::kMillisecond);
-BENCHMARK(BM_200K_uniform)->Unit(benchmark::kMillisecond);
-BENCHMARK(BM_500K_uniform)->Unit(benchmark::kMillisecond);
-BENCHMARK(BM_1M_uniform)->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_uniform)->Arg(2000)->Arg(100000)->Arg(200000)->Arg(500000)->Arg(1000000)->Unit(benchmark::kMillisecond);
 
 BENCHMARK_MAIN()
