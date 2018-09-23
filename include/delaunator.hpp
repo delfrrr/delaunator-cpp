@@ -256,17 +256,23 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
         }
     }
 
+    const double i0x = coords[2 * i0];
+    const double i0y = coords[2 * i0 + 1];
+
     min_dist = std::numeric_limits<double>::max();
 
     // find the point closest to the seed
     for (std::size_t i = 0; i < n; i++) {
         if (i == i0) continue;
-        const double d = dist(coords[2 * i0], coords[2 * i0 + 1], coords[2 * i], coords[2 * i + 1]);
+        const double d = dist(i0x, i0y, coords[2 * i], coords[2 * i + 1]);
         if (d < min_dist && d > 0.0) {
             i1 = i;
             min_dist = d;
         }
     }
+
+    double i1x = coords[2 * i1];
+    double i1y = coords[2 * i1 + 1];
 
     double min_radius = std::numeric_limits<double>::max();
 
@@ -275,7 +281,7 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
         if (i == i0 || i == i1) continue;
 
         const double r = circumradius(
-            coords[2 * i0], coords[2 * i0 + 1], coords[2 * i1], coords[2 * i1 + 1], coords[2 * i], coords[2 * i + 1]);
+            i0x, i0y, i1x, i1y, coords[2 * i], coords[2 * i + 1]);
 
         if (r < min_radius) {
             i2 = i;
@@ -287,22 +293,14 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
         throw std::runtime_error("not triangulation");
     }
 
-    if (orient(
-            coords[2 * i0], coords[2 * i0 + 1], //
-            coords[2 * i1],
-            coords[2 * i1 + 1], //
-            coords[2 * i2],
-            coords[2 * i2 + 1]) //
-    ) {
-        std::swap(i1, i2);
-    }
+    double i2x = coords[2 * i2];
+    double i2y = coords[2 * i2 + 1];
 
-    const double i0x = coords[2 * i0];
-    const double i0y = coords[2 * i0 + 1];
-    const double i1x = coords[2 * i1];
-    const double i1y = coords[2 * i1 + 1];
-    const double i2x = coords[2 * i2];
-    const double i2y = coords[2 * i2 + 1];
+    if (orient(i0x, i0y, i1x, i1y, i2x, i2y)) {
+        std::swap(i1, i2);
+        std::swap(i1x, i2x);
+        std::swap(i1y, i2y);
+    }
 
     std::tie(m_center_x, m_center_y) = circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
 
