@@ -180,6 +180,10 @@ public:
     std::vector<double> const& coords;
     std::vector<std::size_t> triangles;
     std::vector<std::size_t> halfedges;
+    std::vector<std::size_t> hull_prev;
+    std::vector<std::size_t> hull_next;
+    std::vector<std::size_t> hull_tri;
+    std::size_t hull_start;
 
     Delaunator(std::vector<double> const& in_coords);
 
@@ -187,18 +191,12 @@ public:
 
 private:
     std::vector<std::size_t> m_hash;
-    std::vector<DelaunatorPoint> m_hull;
-    std::size_t m_hull_entry;
     double m_center_x;
     double m_center_y;
     std::size_t m_hash_size;
 
-    std::size_t remove_node(std::size_t node);
     std::size_t legalize(std::size_t a);
-    std::size_t insert_node(std::size_t i);
-    std::size_t insert_node(std::size_t i, std::size_t prev);
     std::size_t hash_key(double x, double y);
-    void hash_edge(std::size_t e);
     std::size_t add_triangle(
         std::size_t i0,
         std::size_t i1,
@@ -213,9 +211,11 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
     : coords(in_coords),
       triangles(),
       halfedges(),
+      hull_prev(),
+      hull_next(),
+      hull_tri(),
+      hull_start(),
       m_hash(),
-      m_hull(),
-      m_hull_entry(),
       m_center_x(),
       m_center_y(),
       m_hash_size() {
@@ -309,27 +309,29 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
 
     // initialize a hash table for storing edges of the advancing convex hull
     m_hash_size = static_cast<std::size_t>(std::llround(std::ceil(std::sqrt(n))));
-    m_hash.reserve(m_hash_size);
-    for (std::size_t i = 0; i < m_hash_size; i++) {
-        m_hash.push_back(INVALID_INDEX);
-    }
+    m_hash.resize(m_hash_size);
+    std::fill(m_hash.begin(), m_hash.end(), INVALID_INDEX);
 
-    // initialize a circular doubly-linked list that will hold an advancing convex hull
-    // doubly-linked list is stored as plain vector
-    // vertices are linked via ineces of next/prev vertice
-    m_hull.reserve(coords.size());
-    std::size_t e = insert_node(i0);
-    m_hull_entry = e;
-    hash_edge(e);
-    m_hull[e].t = 0;
+    // initialize arrays for tracking the edges of the advancing convex hull
+    hull_prev.resize(n);
+    hull_next.resize(n);
+    hull_tri.resize(n);
 
-    e = insert_node(i1, e);
-    hash_edge(e);
-    m_hull[e].t = 1;
+    hull_start = i0;
 
-    e = insert_node(i2, e);
-    hash_edge(e);
-    m_hull[e].t = 2;
+    size_t hull_size = 3;
+
+    hull_next[i0] = hull_prev[i2] = i1;
+    hull_next[i1] = hull_prev[i0] = i2;
+    hull_next[i2] = hull_prev[i1] = i0;
+
+    hull_tri[i0] = 0;
+    hull_tri[i1] = 1;
+    hull_tri[i2] = 2;
+
+    m_hash[hash_key(i0x, i0y)] = i0;
+    m_hash[hash_key(i1x, i1y)] = i1;
+    m_hash[hash_key(i2x, i2y)] = i2;
 
     std::size_t max_triangles = n < 3 ? 1 : 2 * n - 5;
     triangles.reserve(max_triangles * 3);
@@ -354,106 +356,87 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
             check_pts_equal(x, y, i2x, i2y)) continue;
 
         // find a visible edge on the convex hull using edge hash
-        const std::size_t start_key = hash_key(x, y);
-        std::size_t key = start_key;
-        std::size_t start = INVALID_INDEX;
-        do {
-            start = m_hash[key];
-            key = (key + 1) % m_hash_size;
-        } while (
-            (start == INVALID_INDEX || m_hull[start].removed) &&
-            (key != start_key));
+        std::size_t start = 0;
 
-        start = m_hull[start].prev;
-        e = start;
-        while (!orient(
-            x, y, //
-            m_hull[e].x,
-            m_hull[e].y,              //
-            m_hull[m_hull[e].next].x, //
-            m_hull[m_hull[e].next].y) //
-        ) {
-            e = m_hull[e].next;
+        size_t key = hash_key(x, y);
+        for (size_t j = 0; j < m_hash_size; j++) {
+            start = m_hash[(key + j) % m_hash_size];
+            if (start != INVALID_INDEX && start != hull_next[start]) break;
+        }
 
+        start = hull_prev[start];
+        size_t e = start;
+        size_t q;
+
+        while (q = hull_next[e], !orient(x, y, coords[2 * e], coords[2 * e + 1], coords[2 * q], coords[2 * q + 1])) { //TODO: does it works in a same way as in JS
+            e = q;
             if (e == start) {
-                e = INVALID_INDEX; //TODO: will it work correct?
+                e = INVALID_INDEX;
                 break;
             }
         }
 
-        // likely a near-duplicate point; skip it
-        if (e == INVALID_INDEX) continue;
-
-        const bool walk_back = e == start;
+        if (e == INVALID_INDEX) continue; // likely a near-duplicate point; skip it
 
         // add the first triangle from the point
         std::size_t t = add_triangle(
-            m_hull[e].i,
+            e,
             i,
-            m_hull[m_hull[e].next].i,
+            hull_next[e],
             INVALID_INDEX,
             INVALID_INDEX,
-            m_hull[e].t);
+            hull_tri[e]);
 
-        m_hull[e].t = t; // keep track of boundary triangles on the hull
-        e = insert_node(i, e);
-
-        // recursively flip triangles from the point until they satisfy the Delaunay condition
-        m_hull[e].t = legalize(t + 2);
+        hull_tri[i] = legalize(t + 2);
+        hull_tri[e] = t;
+        hull_size++;
 
         // walk forward through the hull, adding more triangles and flipping recursively
-        std::size_t q = m_hull[e].next;
-        while (orient(
-            x, y, //
-            m_hull[q].x,
-            m_hull[q].y, //
-            m_hull[m_hull[q].next].x,
-            m_hull[m_hull[q].next].y //
-            )) {
-            t = add_triangle(
-                m_hull[q].i, i, m_hull[m_hull[q].next].i, m_hull[m_hull[q].prev].t, INVALID_INDEX, m_hull[q].t);
-            m_hull[m_hull[q].prev].t = legalize(t + 2);
-            m_hull_entry = remove_node(q);
-            q = m_hull[q].next;
+        std::size_t next = hull_next[e];
+        while (
+            q = hull_next[next],
+            orient(x, y, coords[2 * next], coords[2 * next + 1], coords[2 * q], coords[2 * q + 1])) {
+            t = add_triangle(next, i, q, hull_tri[i], INVALID_INDEX, hull_tri[next]);
+            hull_tri[i] = legalize(t + 2);
+            hull_next[next] = next; // mark as removed
+            hull_size--;
+            next = q;
         }
-        if (walk_back) {
-            // walk backward from the other side, adding more triangles and flipping
-            q = m_hull[e].prev;
-            while (orient(
-                x, y, //
-                m_hull[m_hull[q].prev].x,
-                m_hull[m_hull[q].prev].y, //
-                m_hull[q].x,
-                m_hull[q].y //
-                )) {
-                t = add_triangle(
-                    m_hull[m_hull[q].prev].i, i, m_hull[q].i, INVALID_INDEX, m_hull[q].t, m_hull[m_hull[q].prev].t);
+
+        // walk backward from the other side, adding more triangles and flipping
+        if (e == start) {
+            while (
+                q = hull_prev[e],
+                orient(x, y, coords[2 * q], coords[2 * q + 1], coords[2 * e], coords[2 * e + 1])) {
+                t = add_triangle(q, i, e, INVALID_INDEX, hull_tri[e], hull_tri[q]);
                 legalize(t + 2);
-                m_hull[m_hull[q].prev].t = t;
-                m_hull_entry = remove_node(q);
-                q = m_hull[q].prev;
+                hull_tri[q] = t;
+                hull_next[e] = e; // mark as removed
+                hull_size--;
+                e = q;
             }
         }
-        hash_edge(e);
-        hash_edge(m_hull[e].prev);
+
+        // update the hull indices
+        hull_prev[i] = e;
+        hull_start = e;
+        hull_prev[next] = i;
+        hull_next[e] = i;
+        hull_next[i] = next;
+
+        m_hash[hash_key(x, y)] = i;
+        m_hash[hash_key(coords[2 * e], coords[2 * e + 1])] = e;
     }
 }
 
 double Delaunator::get_hull_area() {
     std::vector<double> hull_area;
-    size_t e = m_hull_entry;
+    size_t e = hull_start;
     do {
-        hull_area.push_back((m_hull[e].x - m_hull[m_hull[e].prev].x) * (m_hull[e].y + m_hull[m_hull[e].prev].y));
-        e = m_hull[e].next;
-    } while (e != m_hull_entry);
+        hull_area.push_back((coords[2 * e] - coords[2 * hull_prev[e]]) * (coords[2 * e + 1] + coords[2 * hull_prev[e] + 1]));
+        e = hull_next[e];
+    } while (e != hull_start);
     return sum(hull_area);
-}
-
-std::size_t Delaunator::remove_node(std::size_t node) {
-    m_hull[m_hull[node].prev].next = m_hull[node].next;
-    m_hull[m_hull[node].next].prev = m_hull[node].prev;
-    m_hull[node].removed = true;
-    return m_hull[node].prev;
 }
 
 std::size_t Delaunator::legalize(std::size_t a) {
@@ -508,14 +491,14 @@ std::size_t Delaunator::legalize(std::size_t a) {
 
         // edge swapped on the other side of the hull (rare); fix the halfedge reference
         if (hbl == INVALID_INDEX) {
-            std::size_t e = m_hull_entry;
+            std::size_t e = hull_start;
             do {
-                if (m_hull[e].t == bl) {
-                    m_hull[e].t = a;
+                if (hull_tri[e] == bl) {
+                    hull_tri[e] = a;
                     break;
                 }
-                e = m_hull[e].next;
-            } while (e != m_hull_entry);
+                e = hull_next[e];
+            } while (e != hull_start);
         }
         link(a, hbl);
         link(b, halfedges[ar]);
@@ -529,40 +512,12 @@ std::size_t Delaunator::legalize(std::size_t a) {
     return ar;
 }
 
-std::size_t Delaunator::insert_node(std::size_t i) {
-    std::size_t node = m_hull.size();
-    DelaunatorPoint p = {
-        i,
-        coords[2 * i],
-        coords[2 * i + 1],
-        0,
-        node,
-        node,
-        false
-    };
-    m_hull.push_back(p);
-    return node;
-}
-
-std::size_t Delaunator::insert_node(std::size_t i, std::size_t prev) {
-    std::size_t node = insert_node(i);
-    m_hull[node].next = m_hull[prev].next;
-    m_hull[node].prev = prev;
-    m_hull[m_hull[node].next].prev = node;
-    m_hull[prev].next = node;
-    return node;
-}
-
 std::size_t Delaunator::hash_key(double x, double y) {
     const double dx = x - m_center_x;
     const double dy = y - m_center_y;
     return static_cast<std::size_t>(std::llround(
                std::floor(pseudo_angle(dx, dy) * static_cast<double>(m_hash_size)))) %
            m_hash_size;
-}
-
-void Delaunator::hash_edge(std::size_t e) {
-    m_hash[hash_key(m_hull[e].x, m_hull[e].y)] = e;
 }
 
 std::size_t Delaunator::add_triangle(
