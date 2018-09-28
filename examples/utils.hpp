@@ -22,7 +22,7 @@ inline std::string read_file(const char* filename) {
     }
 }
 
-inline std::vector<double> get_geo_json_points(std::string const& json) {
+inline std::vector< double> get_geo_json_points(std::string const& json) {
     rapidjson::Document document;
     if(document.Parse(json.c_str()).HasParseError()) {
         throw std::runtime_error("Cannot parse JSON");

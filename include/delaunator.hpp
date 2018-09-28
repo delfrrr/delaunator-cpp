@@ -93,47 +93,38 @@ inline std::pair<double, double> circumcenter(
     return std::make_pair(x, y);
 }
 
-inline double compare(
-    std::vector<double> const& coords,
-    std::size_t i,
-    std::size_t j,
-    double cx,
-    double cy) {
-    const double d1 = dist(coords[2 * i], coords[2 * i + 1], cx, cy);
-    const double d2 = dist(coords[2 * j], coords[2 * j + 1], cx, cy);
-    const double diff1 = d1 - d2;
-    const double diff2 = coords[2 * i] - coords[2 * j];
-    const double diff3 = coords[2 * i + 1] - coords[2 * j + 1];
-
-    if (diff1 > 0.0 || diff1 < 0.0) {
-        return diff1;
-    } else if (diff2 > 0.0 || diff2 < 0.0) {
-        return diff2;
-    } else {
-        return diff3;
-    }
-}
-
-struct sort_to_center {
+struct compare {
 
     std::vector<double> const& coords;
     double cx;
     double cy;
 
     bool operator()(std::size_t i, std::size_t j) {
-        return compare(coords, i, j, cx, cy) < 0;
+        const double d1 = dist(coords[2 * i], coords[2 * i + 1], cx, cy);
+        const double d2 = dist(coords[2 * j], coords[2 * j + 1], cx, cy);
+        const double diff1 = d1 - d2;
+        const double diff2 = coords[2 * i] - coords[2 * j];
+        const double diff3 = coords[2 * i + 1] - coords[2 * j + 1];
+
+        if (diff1 > 0.0 || diff1 < 0.0) {
+            return diff1 < 0;
+        } else if (diff2 > 0.0 || diff2 < 0.0) {
+            return diff2 < 0;
+        } else {
+            return diff3 < 0;
+        }
     }
 };
 
 inline bool in_circle(
-    double ax,
-    double ay,
-    double bx,
-    double by,
-    double cx,
-    double cy,
-    double px,
-    double py) {
+    const double ax,
+    const double ay,
+    const double bx,
+    const double by,
+    const double cx,
+    const double cy,
+    const double px,
+    const double py) {
     const double dx = ax - px;
     const double dy = ay - py;
     const double ex = bx - px;
@@ -152,6 +143,7 @@ inline bool in_circle(
 
 constexpr double EPSILON = std::numeric_limits<double>::epsilon();
 constexpr std::size_t INVALID_INDEX = std::numeric_limits<std::size_t>::max();
+constexpr std::size_t LEGALIZE_STACK_SIZE = 100;
 
 inline bool check_pts_equal(double x1, double y1, double x2, double y2) {
     return std::fabs(x1 - x2) <= EPSILON &&
@@ -194,6 +186,7 @@ private:
     double m_center_x;
     double m_center_y;
     std::size_t m_hash_size;
+    std::size_t m_legalize_stack[LEGALIZE_STACK_SIZE];
 
     std::size_t legalize(std::size_t a);
     std::size_t hash_key(double x, double y);
@@ -218,7 +211,8 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
       m_hash(),
       m_center_x(),
       m_center_y(),
-      m_hash_size() {
+      m_hash_size(),
+      m_legalize_stack() {
     std::size_t n = coords.size() >> 1;
 
     double max_x = std::numeric_limits<double>::min();
@@ -305,7 +299,7 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
     std::tie(m_center_x, m_center_y) = circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
 
     // sort the points by distance from the seed triangle circumcenter
-    std::sort(ids.begin(), ids.end(), sort_to_center{ coords, m_center_x, m_center_y });
+    std::sort(ids.begin(), ids.end(), compare{ coords, m_center_x, m_center_y });
 
     // initialize a hash table for storing edges of the advancing convex hull
     m_hash_size = static_cast<std::size_t>(std::llround(std::ceil(std::sqrt(n))));
@@ -439,75 +433,104 @@ double Delaunator::get_hull_area() {
     return sum(hull_area);
 }
 
-std::size_t Delaunator::legalize(std::size_t a) {
-    const std::size_t b = halfedges[a];
+std::size_t Delaunator::legalize(std::size_t ia) {
+    std::size_t b;
+    std::size_t a0;
+    std::size_t b0;
+    std::size_t al;
+    std::size_t ar;
+    std::size_t bl;
 
-    /* if the pair of triangles doesn't satisfy the Delaunay condition
-    * (p1 is inside the circumcircle of [p0, pl, pr]), flip them,
-    * then do the same check/flip recursively for the new pair of triangles
-    *
-    *           pl                    pl
-    *          /||\                  /  \
-    *       al/ || \bl            al/    \a
-    *        /  ||  \              /      \
-    *       /  a||b  \    flip    /___ar___\
-    *     p0\   ||   /p1   =>   p0\---bl---/p1
-    *        \  ||  /              \      /
-    *       ar\ || /br             b\    /br
-    *          \||/                  \  /
-    *           pr                    pr
-    */
-    const std::size_t a0 = a - a % 3;
-    const std::size_t b0 = b - b % 3;
+    size_t i = 0;
+    m_legalize_stack[i] = ia;
+    size_t size = 1;
+    while(i < size) {
 
-    const std::size_t al = a0 + (a + 1) % 3;
-    const std::size_t ar = a0 + (a + 2) % 3;
-    const std::size_t bl = b0 + (b + 2) % 3;
-
-    const std::size_t p0 = triangles[ar];
-    const std::size_t pr = triangles[a];
-    const std::size_t pl = triangles[al];
-    const std::size_t p1 = triangles[bl];
-
-    if (b == INVALID_INDEX) {
-        return ar;
-    }
-
-    const bool illegal = in_circle(
-        coords[2 * p0],
-        coords[2 * p0 + 1],
-        coords[2 * pr],
-        coords[2 * pr + 1],
-        coords[2 * pl],
-        coords[2 * pl + 1],
-        coords[2 * p1],
-        coords[2 * p1 + 1]);
-
-    if (illegal) {
-        triangles[a] = p1;
-        triangles[b] = p0;
-
-        auto hbl = halfedges[bl];
-
-        // edge swapped on the other side of the hull (rare); fix the halfedge reference
-        if (hbl == INVALID_INDEX) {
-            std::size_t e = hull_start;
-            do {
-                if (hull_tri[e] == bl) {
-                    hull_tri[e] = a;
-                    break;
-                }
-                e = hull_next[e];
-            } while (e != hull_start);
+        if (i >= LEGALIZE_STACK_SIZE) {
+            throw std::runtime_error("Legalize stack overflow");
         }
-        link(a, hbl);
-        link(b, halfedges[ar]);
-        link(ar, bl);
 
-        std::size_t br = b0 + (b + 1) % 3;
+        auto const a = m_legalize_stack[i];
+        i++;
 
-        legalize(a);
-        return legalize(br);
+        /* if the pair of triangles doesn't satisfy the Delaunay condition
+        * (p1 is inside the circumcircle of [p0, pl, pr]), flip them,
+        * then do the same check/flip recursively for the new pair of triangles
+        *
+        *           pl                    pl
+        *          /||\                  /  \
+        *       al/ || \bl            al/    \a
+        *        /  ||  \              /      \
+        *       /  a||b  \    flip    /___ar___\
+        *     p0\   ||   /p1   =>   p0\---bl---/p1
+        *        \  ||  /              \      /
+        *       ar\ || /br             b\    /br
+        *          \||/                  \  /
+        *           pr                    pr
+        */
+
+        b = halfedges[a];
+
+        a0 = a - a % 3;
+        b0 = b - b % 3;
+
+        al = a0 + (a + 1) % 3;
+        ar = a0 + (a + 2) % 3;
+        bl = b0 + (b + 2) % 3;
+
+        const std::size_t p0 = triangles[ar];
+        const std::size_t pr = triangles[a];
+        const std::size_t pl = triangles[al];
+        const std::size_t p1 = triangles[bl];
+
+        if (b == INVALID_INDEX) {
+            continue;
+        }
+
+        const bool illegal = in_circle(
+            coords[2 * p0],
+            coords[2 * p0 + 1],
+            coords[2 * pr],
+            coords[2 * pr + 1],
+            coords[2 * pl],
+            coords[2 * pl + 1],
+            coords[2 * p1],
+            coords[2 * p1 + 1]);
+
+        if (illegal) {
+            triangles[a] = p1;
+            triangles[b] = p0;
+
+            auto hbl = halfedges[bl];
+
+            // edge swapped on the other side of the hull (rare); fix the halfedge reference
+            if (hbl == INVALID_INDEX) {
+                std::size_t e = hull_start;
+                do {
+                    if (hull_tri[e] == bl) {
+                        hull_tri[e] = a;
+                        break;
+                    }
+                    e = hull_next[e];
+                } while (e != hull_start);
+            }
+            link(a, hbl);
+            link(b, halfedges[ar]);
+            link(ar, bl);
+
+            std::size_t br = b0 + (b + 1) % 3;
+
+            if (i < size) {
+                //move elements down the stack
+                for(auto mi = size - 1; mi >= i; mi--) {
+                    m_legalize_stack[mi + 2] = m_legalize_stack[mi];
+                }
+            }
+
+            m_legalize_stack[i] = a;
+            m_legalize_stack[i + 1] = br;
+            size+=2;
+        }
     }
     return ar;
 }
@@ -537,7 +560,7 @@ std::size_t Delaunator::add_triangle(
     return t;
 }
 
-void Delaunator::link(std::size_t a, std::size_t b) {
+void Delaunator::link(const std::size_t a, const std::size_t b) {
     std::size_t s = halfedges.size();
     if (a == s) {
         halfedges.push_back(b);
