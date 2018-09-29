@@ -11,6 +11,15 @@
 
 namespace delaunator {
 
+//@see https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op/33333636#33333636
+inline size_t fast_mod(const size_t i, const size_t c) {
+    return i >= c ? i % c : i;
+};
+
+inline size_t fast_mod_3(const size_t i) {
+    return i % 3;
+};
+
 // Kahan and Babuska summation, Neumaier variant; accumulates less FP error
 inline double sum(const std::vector<double>& x) {
     double sum = x[0];
@@ -151,7 +160,7 @@ inline bool check_pts_equal(double x1, double y1, double x2, double y2) {
 }
 
 // monotonically increases with real angle, but doesn't need expensive trigonometry
-inline double pseudo_angle(double dx, double dy) {
+inline double pseudo_angle(const double dx, const double dy) {
     const double p = dx / (std::abs(dx) + std::abs(dy));
     return (dy > 0.0 ? 3.0 - p : 1.0 + p) / 4.0; // [0..1)
 }
@@ -189,7 +198,7 @@ private:
     std::size_t m_legalize_stack[LEGALIZE_STACK_SIZE];
 
     std::size_t legalize(std::size_t a);
-    std::size_t hash_key(double x, double y);
+    std::size_t hash_key(double x, double y) const;
     std::size_t add_triangle(
         std::size_t i0,
         std::size_t i1,
@@ -354,7 +363,7 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
 
         size_t key = hash_key(x, y);
         for (size_t j = 0; j < m_hash_size; j++) {
-            start = m_hash[(key + j) % m_hash_size];
+            start = m_hash[fast_mod(key + j, m_hash_size)];
             if (start != INVALID_INDEX && start != hull_next[start]) break;
         }
 
@@ -441,10 +450,10 @@ std::size_t Delaunator::legalize(std::size_t ia) {
     std::size_t ar;
     std::size_t bl;
 
-    size_t i = 0;
+    unsigned int i = 0;
     m_legalize_stack[i] = ia;
     size_t size = 1;
-    while(i < size) {
+    while (i < size) {
 
         if (i >= LEGALIZE_STACK_SIZE) {
             throw std::runtime_error("Legalize stack overflow");
@@ -471,12 +480,13 @@ std::size_t Delaunator::legalize(std::size_t ia) {
 
         b = halfedges[a];
 
-        a0 = a - a % 3;
-        b0 = b - b % 3;
+        //@see https://embeddedgurus.com/stack-overflow/2011/02/efficient-c-tip-13-use-the-modulus-operator-with-caution/
+        a0 = 3 * (a / 3); //a - a % 3;
+        b0 = 3 * (b / 3); //b - b % 3;
 
-        al = a0 + (a + 1) % 3;
-        ar = a0 + (a + 2) % 3;
-        bl = b0 + (b + 2) % 3;
+        al = a0 + fast_mod_3(a + 1);
+        ar = a0 + fast_mod_3(a + 2);
+        bl = b0 + fast_mod_3(b + 2);
 
         const std::size_t p0 = triangles[ar];
         const std::size_t pr = triangles[a];
@@ -518,29 +528,29 @@ std::size_t Delaunator::legalize(std::size_t ia) {
             link(b, halfedges[ar]);
             link(ar, bl);
 
-            std::size_t br = b0 + (b + 1) % 3;
+            std::size_t br = b0 + fast_mod_3(b + 1);
 
             if (i < size) {
                 //move elements down the stack
-                for(auto mi = size - 1; mi >= i; mi--) {
+                for (auto mi = size - 1; mi >= i; mi--) {
                     m_legalize_stack[mi + 2] = m_legalize_stack[mi];
                 }
             }
 
             m_legalize_stack[i] = a;
             m_legalize_stack[i + 1] = br;
-            size+=2;
+            size += 2;
         }
     }
     return ar;
 }
 
-std::size_t Delaunator::hash_key(double x, double y) {
+inline std::size_t Delaunator::hash_key(const double x, const double y) const {
     const double dx = x - m_center_x;
     const double dy = y - m_center_y;
-    return static_cast<std::size_t>(std::llround(
-               std::floor(pseudo_angle(dx, dy) * static_cast<double>(m_hash_size)))) %
-           m_hash_size;
+    return fast_mod(
+        static_cast<std::size_t>(std::llround(std::floor(pseudo_angle(dx, dy) * static_cast<double>(m_hash_size)))),
+        m_hash_size);
 }
 
 std::size_t Delaunator::add_triangle(
