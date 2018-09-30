@@ -16,10 +16,6 @@ inline size_t fast_mod(const size_t i, const size_t c) {
     return i >= c ? i % c : i;
 }
 
-inline size_t fast_mod_3(const size_t i) {
-    return i % 3;
-}
-
 // Kahan and Babuska summation, Neumaier variant; accumulates less FP error
 inline double sum(const std::vector<double>& x) {
     double sum = x[0];
@@ -152,7 +148,7 @@ inline bool in_circle(
 
 constexpr double EPSILON = std::numeric_limits<double>::epsilon();
 constexpr std::size_t INVALID_INDEX = std::numeric_limits<std::size_t>::max();
-constexpr std::size_t LEGALIZE_STACK_SIZE = 100;
+constexpr std::size_t LEGALIZE_STACK_SIZE = 128;
 
 inline bool check_pts_equal(double x1, double y1, double x2, double y2) {
     return std::fabs(x1 - x2) <= EPSILON &&
@@ -484,9 +480,9 @@ std::size_t Delaunator::legalize(std::size_t ia) {
         a0 = 3 * (a / 3); //a - a % 3;
         b0 = 3 * (b / 3); //b - b % 3;
 
-        al = a0 + fast_mod_3(a + 1);
-        ar = a0 + fast_mod_3(a + 2);
-        bl = b0 + fast_mod_3(b + 2);
+        al = a0 + (a + 1) % 3;
+        ar = a0 + (a + 2) % 3;
+        bl = b0 + (b + 2) % 3;
 
         const std::size_t p0 = triangles[ar];
         const std::size_t pr = triangles[a];
@@ -528,7 +524,7 @@ std::size_t Delaunator::legalize(std::size_t ia) {
             link(b, halfedges[ar]);
             link(ar, bl);
 
-            std::size_t br = b0 + fast_mod_3(b + 1);
+            std::size_t br = b0 + (b + 1) % 3;
 
             if (i < size) {
                 //move elements down the stack

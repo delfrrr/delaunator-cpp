@@ -34,6 +34,6 @@ void BM_uniform(benchmark::State& state) {
 }
 
 BENCHMARK(BM_45K_geojson_nodes)->Unit(benchmark::kMillisecond);
-BENCHMARK(BM_uniform)->Arg(2000)->Arg(100000)->Arg(200000)->Arg(500000)->Arg(1000000)->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_uniform)->Arg(2000)->Arg(100000)->Arg(200000)->Arg(500000)->Arg(1000000)->Arg(100000000)->Unit(benchmark::kMillisecond);
 
 BENCHMARK_MAIN()
