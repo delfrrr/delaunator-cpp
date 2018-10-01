@@ -148,7 +148,9 @@ inline bool in_circle(
 
 constexpr double EPSILON = std::numeric_limits<double>::epsilon();
 constexpr std::size_t INVALID_INDEX = std::numeric_limits<std::size_t>::max();
-constexpr std::size_t LEGALIZE_STACK_SIZE = 128;
+
+//@see https://stackoverflow.com/questions/30208196/maximum-recursive-function-calls-in-c-c-before-stack-is-full-and-gives-a-segme
+constexpr std::size_t LEGALIZE_STACK_SIZE = 1024;
 
 inline bool check_pts_equal(double x1, double y1, double x2, double y2) {
     return std::fabs(x1 - x2) <= EPSILON &&
@@ -451,10 +453,6 @@ std::size_t Delaunator::legalize(std::size_t ia) {
     size_t size = 1;
     while (i < size) {
 
-        if (i >= LEGALIZE_STACK_SIZE) {
-            throw std::runtime_error("Legalize stack overflow");
-        }
-
         auto const a = m_legalize_stack[i];
         i++;
 
@@ -525,6 +523,10 @@ std::size_t Delaunator::legalize(std::size_t ia) {
             link(ar, bl);
 
             std::size_t br = b0 + (b + 1) % 3;
+
+            if (size + 2 >= (LEGALIZE_STACK_SIZE)) {
+                throw std::runtime_error("Legalize stack overflow");
+            }
 
             if (i < size) {
                 //move elements down the stack
