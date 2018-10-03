@@ -39,10 +39,13 @@ BENCHMARK(BM_45K_geojson_nodes)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_uniform)->Arg(2000)->Arg(100000)->Arg(200000)->Arg(500000)->Arg(1000000)->Unit(benchmark::kMillisecond);
 
 #if BENCHMARK_BIG_O
-    BENCHMARK(BM_uniform)->RangeMultiplier(2)->Range(1<<12, 1<<22)->Unit(benchmark::kMillisecond)->Complexity();
+BENCHMARK(BM_uniform)->RangeMultiplier(2)->Range(1 << 12, 1 << 22)->Unit(benchmark::kMillisecond)->Complexity();
+#endif
+#if BENCHMARK_10M
+BENCHMARK(BM_uniform)->Arg(1000000 * 10)->Unit(benchmark::kMillisecond);
 #endif
 #if BENCHMARK_100M
-    BENCHMARK(BM_uniform)->Arg(1000000 * 100)->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_uniform)->Arg(1000000 * 100)->Unit(benchmark::kMillisecond);
 #endif
 
 BENCHMARK_MAIN()

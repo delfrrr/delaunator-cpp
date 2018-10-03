@@ -150,7 +150,7 @@ constexpr double EPSILON = std::numeric_limits<double>::epsilon();
 constexpr std::size_t INVALID_INDEX = std::numeric_limits<std::size_t>::max();
 
 //@see https://stackoverflow.com/questions/30208196/maximum-recursive-function-calls-in-c-c-before-stack-is-full-and-gives-a-segme
-constexpr std::size_t LEGALIZE_STACK_SIZE = 1024;
+constexpr std::size_t EDGE_STACK_SIZE = 1024;
 
 inline bool check_pts_equal(double x1, double y1, double x2, double y2) {
     return std::fabs(x1 - x2) <= EPSILON &&
@@ -193,7 +193,7 @@ private:
     double m_center_x;
     double m_center_y;
     std::size_t m_hash_size;
-    std::size_t m_legalize_stack[LEGALIZE_STACK_SIZE];
+    std::size_t m_edge_stack[EDGE_STACK_SIZE];
 
     std::size_t legalize(std::size_t a);
     std::size_t hash_key(double x, double y) const;
@@ -219,7 +219,7 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
       m_center_x(),
       m_center_y(),
       m_hash_size(),
-      m_legalize_stack() {
+      m_edge_stack() {
     std::size_t n = coords.size() >> 1;
 
     double max_x = std::numeric_limits<double>::min();
@@ -440,21 +440,13 @@ double Delaunator::get_hull_area() {
     return sum(hull_area);
 }
 
-std::size_t Delaunator::legalize(std::size_t ia) {
-    std::size_t b;
-    std::size_t a0;
-    std::size_t b0;
-    std::size_t al;
-    std::size_t ar;
-    std::size_t bl;
+std::size_t Delaunator::legalize(std::size_t a) {
+    std::size_t i = 0;
+    std::size_t ar = 0;
 
-    unsigned int i = 0;
-    m_legalize_stack[i] = ia;
-    size_t size = 1;
-    while (i < size) {
-
-        auto const a = m_legalize_stack[i];
-        i++;
+    // recursion eliminated with a fixed-size stack
+    while (true) {
+        const size_t b = halfedges[a];
 
         /* if the pair of triangles doesn't satisfy the Delaunay condition
         * (p1 is inside the circumcircle of [p0, pl, pr]), flip them,
@@ -471,25 +463,28 @@ std::size_t Delaunator::legalize(std::size_t ia) {
         *          \||/                  \  /
         *           pr                    pr
         */
-
-        b = halfedges[a];
-
-        //@see https://embeddedgurus.com/stack-overflow/2011/02/efficient-c-tip-13-use-the-modulus-operator-with-caution/
-        a0 = 3 * (a / 3); //a - a % 3;
-        b0 = 3 * (b / 3); //b - b % 3;
-
-        al = a0 + (a + 1) % 3;
+        const size_t a0 = 3 * (a / 3);
         ar = a0 + (a + 2) % 3;
-        bl = b0 + (b + 2) % 3;
+
+        if (b == INVALID_INDEX) {
+            if (i > 0) {
+                i--;
+                a = m_edge_stack[i];
+                continue;
+            } else {
+                //i = INVALID_INDEX;
+                break;
+            }
+        }
+
+        const size_t b0 = 3 * (b / 3);
+        const size_t al = a0 + (a + 1) % 3;
+        const size_t bl = b0 + (b + 2) % 3;
 
         const std::size_t p0 = triangles[ar];
         const std::size_t pr = triangles[a];
         const std::size_t pl = triangles[al];
         const std::size_t p1 = triangles[bl];
-
-        if (b == INVALID_INDEX) {
-            continue;
-        }
 
         const bool illegal = in_circle(
             coords[2 * p0],
@@ -521,23 +516,19 @@ std::size_t Delaunator::legalize(std::size_t ia) {
             link(a, hbl);
             link(b, halfedges[ar]);
             link(ar, bl);
-
             std::size_t br = b0 + (b + 1) % 3;
 
-            if (size + 2 >= (LEGALIZE_STACK_SIZE)) {
-                throw std::runtime_error("Legalize stack overflow");
+            if (i + 1 < EDGE_STACK_SIZE) {
+                m_edge_stack[i++] = br;
             }
-
-            if (i < size) {
-                //move elements down the stack
-                for (auto mi = size - 1; mi >= i; mi--) {
-                    m_legalize_stack[mi + 2] = m_legalize_stack[mi];
-                }
+        } else {
+            if (i > 0) {
+                i--;
+                a = m_edge_stack[i];
+                continue;
+            } else {
+                break;
             }
-
-            m_legalize_stack[i] = a;
-            m_legalize_stack[i + 1] = br;
-            size += 2;
         }
     }
     return ar;
