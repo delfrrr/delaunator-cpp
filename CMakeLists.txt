@@ -7,6 +7,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/mason.cmake)
 
 option(WERROR "Add -Werror flag to build (turns warnings into errors)" ON)
+option(BENCHMARK_BIG_O "Calculate Big O in benchmark" OFF)
+option(BENCHMARK_100M "Run against 100M points" OFF)
 
 # configure optimization
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -50,6 +52,14 @@ add_executable(unit-tests ${TEST_SOURCES})
 find_package(Threads REQUIRED)
 file(GLOB BENCH_SOURCES bench/*.cpp)
 add_executable(bench-tests ${BENCH_SOURCES})
+if(BENCHMARK_BIG_O)
+    message("-- BENCHMARK_BIG_O=1")
+    target_compile_definitions(bench-tests PRIVAT BENCHMARK_BIG_O=1)
+endif()
+if(BENCHMARK_100M)
+    message("-- BENCHMARK_100M=1")
+    target_compile_definitions(bench-tests PRIVAT BENCHMARK_100M=1)
+endif()
 
 #examples
 add_executable(triangulate-geojson examples/triangulate_geojson.cpp)
