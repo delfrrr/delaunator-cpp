@@ -149,9 +149,6 @@ inline bool in_circle(
 constexpr double EPSILON = std::numeric_limits<double>::epsilon();
 constexpr std::size_t INVALID_INDEX = std::numeric_limits<std::size_t>::max();
 
-//@see https://stackoverflow.com/questions/30208196/maximum-recursive-function-calls-in-c-c-before-stack-is-full-and-gives-a-segme
-constexpr std::size_t EDGE_STACK_SIZE = 1024;
-
 inline bool check_pts_equal(double x1, double y1, double x2, double y2) {
     return std::fabs(x1 - x2) <= EPSILON &&
            std::fabs(y1 - y2) <= EPSILON;
@@ -193,7 +190,7 @@ private:
     double m_center_x;
     double m_center_y;
     std::size_t m_hash_size;
-    std::size_t m_edge_stack[EDGE_STACK_SIZE];
+    std::vector<std::size_t> m_edge_stack;
 
     std::size_t legalize(std::size_t a);
     std::size_t hash_key(double x, double y) const;
@@ -443,6 +440,7 @@ double Delaunator::get_hull_area() {
 std::size_t Delaunator::legalize(std::size_t a) {
     std::size_t i = 0;
     std::size_t ar = 0;
+    m_edge_stack.clear();
 
     // recursion eliminated with a fixed-size stack
     while (true) {
@@ -518,9 +516,13 @@ std::size_t Delaunator::legalize(std::size_t a) {
             link(ar, bl);
             std::size_t br = b0 + (b + 1) % 3;
 
-            if (i + 1 < EDGE_STACK_SIZE) {
-                m_edge_stack[i++] = br;
+            if (i < m_edge_stack.size()) {
+                m_edge_stack[i] = br;
+            } else {
+                m_edge_stack.push_back(br);
             }
+            i++;
+
         } else {
             if (i > 0) {
                 i--;
