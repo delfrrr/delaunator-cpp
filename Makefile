@@ -2,6 +2,7 @@
 # Whether to turn compiler warnings into errors
 export WERROR ?= true
 export BUILD_DIR ?= cmake-build
+export XCODE_PROJ_DIR ?= xcode-project
 
 default: release
 
@@ -10,6 +11,9 @@ release:
 
 debug:
 	mkdir -p ./$(BUILD_DIR) && cd ./$(BUILD_DIR) && cmake ../ -DCMAKE_BUILD_TYPE=Debug -DWERROR=$(WERROR) && VERBOSE=1 cmake --build .
+
+xcode:
+	mkdir -p ./$(XCODE_PROJ_DIR) && cd ./$(XCODE_PROJ_DIR) && cmake -G Xcode ../
 
 test:
 	@if [ -f ./$(BUILD_DIR)/unit-tests ]; then ./$(BUILD_DIR)/unit-tests; else echo "Please run 'make release' or 'make debug' first" && exit 1; fi

@@ -48,16 +48,16 @@ int main() {
 
 ```
 Run on (4 X 2300 MHz CPU s)
-2018-09-26 09:28:34
+2018-09-29 09:27:28
 ------------------------------------------------------------
 Benchmark                     Time           CPU Iterations
 ------------------------------------------------------------
-BM_45K_geojson_nodes         24 ms         24 ms         29
-BM_uniform/2000               1 ms          1 ms        887
-BM_uniform/100000            66 ms         66 ms          9
-BM_uniform/200000           158 ms        155 ms          4
-BM_uniform/500000           441 ms        439 ms          2
-BM_uniform/1000000         1062 ms       1058 ms          1
+BM_45K_geojson_nodes         22 ms         22 ms         32
+BM_uniform/2000               1 ms          1 ms        982
+BM_uniform/100000            63 ms         62 ms          9
+BM_uniform/200000           140 ms        140 ms          4
+BM_uniform/500000           400 ms        399 ms          2
+BM_uniform/1000000          994 ms        993 ms          1
 ```
 
 Library is ~10% faster then JS version for 1M uniform points ([details](https://github.com/delfrrr/delaunator-cpp/pull/8#issuecomment-422690056))

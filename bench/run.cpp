@@ -7,6 +7,7 @@
 
 std::vector<double> generate_uniform(std::size_t n) {
     std::vector<double> coords;
+    coords.reserve(2 * n);
     std::srand(350);
     double norm = static_cast<double>(RAND_MAX) / 1e3;
     for (size_t i = 0; i < n; i++) {
@@ -31,9 +32,20 @@ void BM_uniform(benchmark::State& state) {
     while (state.KeepRunning()) {
         delaunator::Delaunator delaunator(coords);
     }
+    state.SetComplexityN(state.range(0));
 }
 
 BENCHMARK(BM_45K_geojson_nodes)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_uniform)->Arg(2000)->Arg(100000)->Arg(200000)->Arg(500000)->Arg(1000000)->Unit(benchmark::kMillisecond);
+
+#if BENCHMARK_BIG_O
+BENCHMARK(BM_uniform)->RangeMultiplier(2)->Range(1 << 12, 1 << 22)->Unit(benchmark::kMillisecond)->Complexity();
+#endif
+#if BENCHMARK_10M
+BENCHMARK(BM_uniform)->Arg(1000000 * 10)->Unit(benchmark::kMillisecond);
+#endif
+#if BENCHMARK_100M
+BENCHMARK(BM_uniform)->Arg(1000000 * 100)->Unit(benchmark::kMillisecond);
+#endif
 
 BENCHMARK_MAIN()

@@ -15,3 +15,4 @@ mason_packages
 .toolchain
 .mason
 local.env
+xcode-project
