@@ -5,32 +5,32 @@
 #include <string>
 #include <vector>
 
-std::vector<double> generate_uniform(std::size_t n) {
-    std::vector<double> coords;
-    coords.reserve(2 * n);
+std::vector<utils::point> generate_uniform(std::size_t n) {
+    std::vector<utils::point> coords;
+    coords.reserve(n);
     std::srand(350);
     double norm = static_cast<double>(RAND_MAX) / 1e3;
     for (size_t i = 0; i < n; i++) {
-        coords.push_back(static_cast<double>(std::rand()) / norm);
-        coords.push_back(static_cast<double>(std::rand()) / norm);
+        coords.push_back({(static_cast<double>(std::rand()) / norm), (static_cast<double>(std::rand()) / norm)});
     }
-
     return coords;
 }
 
 void BM_45K_geojson_nodes(benchmark::State& state) {
     std::string points_str = utils::read_file("./test/test-files/osm-nodes-45331-epsg-3857.geojson");
-    std::vector<double> coords = utils::get_geo_json_points(points_str);
+    auto coords = utils::get_geo_json_points(points_str);
 
     while (state.KeepRunning()) {
-        delaunator::Delaunator delaunator(coords);
-    }
+        auto result = delaunator::delaunator(coords);
+        benchmark::DoNotOptimize(result);
+    }   
 }
 
 void BM_uniform(benchmark::State& state) {
-    std::vector<double> coords = generate_uniform(static_cast<std::size_t>(state.range(0)));
+    std::vector<utils::point> coords = generate_uniform(static_cast<std::size_t>(state.range(0)));
     while (state.KeepRunning()) {
-        delaunator::Delaunator delaunator(coords);
+        auto result = delaunator::delaunator(coords);
+        benchmark::DoNotOptimize(result);
     }
     state.SetComplexityN(state.range(0));
 }

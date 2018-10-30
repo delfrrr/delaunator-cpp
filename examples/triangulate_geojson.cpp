@@ -8,7 +8,8 @@
 #include <initializer_list>
 #include <iostream>
 
-std::string serialize_to_json(delaunator::Delaunator const& delaunator) {
+std::string serialize_to_json(delaunator::DelaunatorResult const& delaunator, 
+                              std::vector<utils::point> const& coords) {
     rapidjson::StringBuffer sb;
     rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(sb);
     writer.StartObject();
@@ -34,20 +35,20 @@ std::string serialize_to_json(delaunator::Delaunator const& delaunator) {
                                     writer.StartArray();
                                     writer.StartArray();
                                         writer.StartArray();
-                                            writer.Double(delaunator.coords[2 * delaunator.triangles[i]]);
-                                            writer.Double(delaunator.coords[2 * delaunator.triangles[i] + 1]);
+                                            writer.Double(coords[delaunator.triangles[i]].x);
+                                            writer.Double(coords[delaunator.triangles[i]].y);
                                         writer.EndArray();
                                         writer.StartArray();
-                                            writer.Double(delaunator.coords[2 * delaunator.triangles[i + 1]]);
-                                            writer.Double(delaunator.coords[2 * delaunator.triangles[i + 1] + 1]);
+                                            writer.Double(coords[delaunator.triangles[i + 1]].x);
+                                            writer.Double(coords[delaunator.triangles[i + 1]].y);
                                         writer.EndArray();
                                         writer.StartArray();
-                                            writer.Double(delaunator.coords[2 * delaunator.triangles[i + 2]]);
-                                            writer.Double(delaunator.coords[2 * delaunator.triangles[i + 2] + 1]);
+                                            writer.Double(coords[delaunator.triangles[i + 2]].x);
+                                            writer.Double(coords[delaunator.triangles[i + 2]].y);
                                         writer.EndArray();
                                         writer.StartArray();
-                                            writer.Double(delaunator.coords[2 * delaunator.triangles[i]]);
-                                            writer.Double(delaunator.coords[2 * delaunator.triangles[i] + 1]);
+                                            writer.Double(coords[delaunator.triangles[i]].x);
+                                            writer.Double(coords[delaunator.triangles[i]].y);
                                         writer.EndArray();
                                     writer.EndArray();
                                     writer.EndArray();
@@ -63,9 +64,9 @@ int main(int, char* argv[]) {
     const char* filename = argv[1];
     const char* output = argv[2];
     std::string json = utils::read_file(filename);
-    std::vector<double> coords = utils::get_geo_json_points(json);
-    delaunator::Delaunator delaunator(coords);
-    const char* out_json = serialize_to_json(delaunator).c_str();
+    auto coords = utils::get_geo_json_points(json);
+    auto result = delaunator::delaunator(coords);
+    const char* out_json = serialize_to_json(result, coords).c_str();
 
     if (output) {
         printf("Writing to file %s", output);
