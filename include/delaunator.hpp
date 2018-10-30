@@ -118,6 +118,7 @@ struct DelaunatorHull {
     template <typename PointContainer>
     DelaunatorHull(PointContainer const& coords):
             points(),
+            sorted_points(),
             start_index(0) {
         points.reserve(coords.size());
         sorted_points.reserve(coords.size());
