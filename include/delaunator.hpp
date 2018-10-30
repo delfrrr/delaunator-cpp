@@ -109,51 +109,6 @@ inline bool check_pts_equal(HullPoint * pt1, HullPoint * pt2) {
            std::fabs(pt1->y - pt2->y) <= EPSILON;
 }
 
-struct DelaunatorMap {
-
-    std::vector<HullPoint*> values;
-    Point center;
-
-    DelaunatorMap(std::size_t size,
-                  Point const& center_):
-            values(size, nullptr),
-            center(center_) {}
-
-    static double pseudo_angle(const double dx, const double dy) {
-        const double p = dx / (std::abs(dx) + std::abs(dy));
-        return (dy > 0.0 ? 3.0 - p : 1.0 + p) / 4.0; // [0..1)
-    }
-
-    std::size_t hash(const double x, const double y) const {
-        const double dx = x - center.x;
-        const double dy = y - center.y;
-        return fast_mod(
-            static_cast<std::size_t>(std::llround(std::floor(pseudo_angle(dx, dy) * static_cast<double>(values.size())))),
-            values.size());
-    }
-
-    void add(HullPoint * pt) {
-        values[hash(pt->x, pt->y)] = pt;
-    }
-    
-    HullPoint * find(const double x, const double y) {
-        auto start = values.begin() + static_cast<std::vector<HullPoint*>::difference_type>(hash(x, y));
-        
-        for (auto iter = start; iter != values.end(); ++iter) {
-            if (*iter != nullptr && (*iter)->next != nullptr) {
-                return *iter;
-            }
-        }
-        for (auto iter = values.begin(); iter != start; ++iter) {
-            if (*iter != nullptr && (*iter)->next != nullptr) {
-                return *iter;
-            }
-        }
-        // Should not reach here under normal operation
-        return nullptr;
-    }
-};
-
 struct DelaunatorHull {
 
     std::vector<HullPoint> points;
@@ -280,50 +235,84 @@ struct DelaunatorHull {
         }
         return closest;
     }
+};
 
+struct DelaunatorMap {
+
+    std::vector<HullPoint*> values;
+    Point center;
+
+    DelaunatorMap(std::size_t size,
+                  Point const& center_):
+            values(size, nullptr),
+            center(center_) {}
+
+    static double pseudo_angle(const double dx, const double dy) {
+        const double p = dx / (std::abs(dx) + std::abs(dy));
+        return (dy > 0.0 ? 3.0 - p : 1.0 + p) / 4.0; // [0..1)
+    }
+
+    std::size_t hash(const double x, const double y) const {
+        const double dx = x - center.x;
+        const double dy = y - center.y;
+        return fast_mod(
+            static_cast<std::size_t>(std::floor(pseudo_angle(dx, dy) * static_cast<double>(values.size()))),
+            values.size());
+    }
+
+    void add(HullPoint * pt) {
+        values[hash(pt->x, pt->y)] = pt;
+    }
+    
+    HullPoint * find(HullPoint * pt) {
+        auto start = values.begin() + static_cast<std::vector<HullPoint*>::difference_type>(hash(pt->x, pt->y));
+        
+        for (auto iter = start; iter != values.end(); ++iter) {
+            if (*iter != nullptr && (*iter)->next != nullptr) {
+                return *iter;
+            }
+        }
+        for (auto iter = values.begin(); iter != start; ++iter) {
+            if (*iter != nullptr && (*iter)->next != nullptr) {
+                return *iter;
+            }
+        }
+        // Should not reach here under normal operation
+        return nullptr;
+    }
 };
 
 struct DelaunatorResult {
 
     std::vector<std::size_t> triangles;
     std::vector<std::size_t> halfedges;
+    std::size_t current_triangle_index;
     std::size_t hull_start;
     bool success;
 
     DelaunatorResult(): 
             triangles(), 
             halfedges(),
+            current_triangle_index(0),
             hull_start(0), 
             success(false) {}
     
     DelaunatorResult(std::size_t size): 
-            triangles(),
-            halfedges(),
+            triangles(size, INVALID_INDEX),
+            halfedges(size, INVALID_INDEX),
+            current_triangle_index(0),
             hull_start(0),
-            success(false) {
-        std::size_t max_triangles = size < 3 ? 1 : 2 * size - 5;
-        triangles.reserve(max_triangles * 3);
-        halfedges.reserve(max_triangles * 3);
+            success(false) {}
+
+    void trim() {
+        triangles.erase(triangles.begin() + static_cast<std::vector<std::size_t>::difference_type>(current_triangle_index), triangles.end());
+        halfedges.erase(halfedges.begin() + static_cast<std::vector<std::size_t>::difference_type>(current_triangle_index), halfedges.end());
     }
 
     void link(std::size_t a, std::size_t b) {
-        std::size_t s = halfedges.size();
-        if (a == s) {
-            halfedges.push_back(b);
-        } else if (a < s) {
-            halfedges[a] = b;
-        } else {
-            throw std::runtime_error("Cannot link edge");
-        }
+        halfedges[a] = b;
         if (b != INVALID_INDEX) {
-            std::size_t s2 = halfedges.size();
-            if (b == s2) {
-                halfedges.push_back(a);
-            } else if (b < s2) {
-                halfedges[b] = a;
-            } else {
-                throw std::runtime_error("Cannot link edge");
-            }
+            halfedges[b] = a;
         }
     }
 
@@ -333,13 +322,14 @@ struct DelaunatorResult {
                              std::size_t a,
                              std::size_t b,
                              std::size_t c) {
-        std::size_t t = triangles.size();
-        triangles.push_back(i0);
-        triangles.push_back(i1);
-        triangles.push_back(i2);
+        std::size_t t = current_triangle_index;
+        triangles[t] = i0;
+        triangles[t+1] = i1;
+        triangles[t+2] = i2;
         link(t, a);
         link(t + 1, b);
         link(t + 2, c);
+        current_triangle_index += 3;
         return t;
     }
 
@@ -377,6 +367,10 @@ struct DelaunatorResult {
             return ar;
         }
 
+        // The biggest performance issue is the cache miss that occurs
+        // when we go back to the HullPoint vector in points to get the
+        // x, y position of the points for "in_circle". As legalize is a very
+        // tight loop, this call accounts for a large amount of our processing.
         bool illegal = in_circle(hull.points[p0],
                                  hull.points[pr],
                                  hull.points[pl],
@@ -422,8 +416,9 @@ DelaunatorResult delaunator(std::vector<PointType> const& coords) {
         // Not enough points to triangulate
         return DelaunatorResult();
     }
-    
-    DelaunatorResult result(point_size);
+ 
+    std::size_t max_triangles = point_size < 3 ? 1 : 2 * point_size - 5;
+    DelaunatorResult result(max_triangles * 3);
 
     DelaunatorHull hull(coords);
 
@@ -440,7 +435,7 @@ DelaunatorResult delaunator(std::vector<PointType> const& coords) {
 
     hull.sort(center);
     
-    std::size_t hash_size = static_cast<std::size_t>(std::llround(std::ceil(std::sqrt(point_size))));
+    std::size_t hash_size = static_cast<std::size_t>(std::ceil(std::sqrt(point_size)));
     DelaunatorMap hash(hash_size, center);
     
     // Setup linking of first points now
@@ -473,7 +468,7 @@ DelaunatorResult delaunator(std::vector<PointType> const& coords) {
             check_pts_equal(pt, pt2)) continue;
 
         // find a visible edge on the convex hull using edge hash
-        auto start = hash.find(pt->x, pt->y);
+        auto start = hash.find(pt);
 
         if (!start) {
             throw std::runtime_error("No values in hash");
@@ -542,6 +537,7 @@ DelaunatorResult delaunator(std::vector<PointType> const& coords) {
         hash.add(e);
     }
     result.success = true;
+    result.trim();
     return result;
 }
 /*
