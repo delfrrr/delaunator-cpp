@@ -8,6 +8,12 @@
 
 namespace utils {
 
+// Define your point type
+struct point {
+    double x;
+    double y;
+};
+
 inline std::string read_file(const char* filename) {
     std::ifstream input_file(filename);
     if(input_file.good()) {
@@ -22,20 +28,19 @@ inline std::string read_file(const char* filename) {
     }
 }
 
-inline std::vector< double> get_geo_json_points(std::string const& json) {
+inline std::vector<point> get_geo_json_points(std::string const& json) {
     rapidjson::Document document;
     if(document.Parse(json.c_str()).HasParseError()) {
         throw std::runtime_error("Cannot parse JSON");
     }
     const rapidjson::Value& features = document["features"];
-    std::vector<double> coords;
+    std::vector<point> coords;
     // vector<double> y_vector;
     for(rapidjson::SizeType i = 0; i < features.Size(); i++) {
         const rapidjson::Value& coordinates = features[i]["geometry"]["coordinates"];
         const double x = coordinates[0].GetDouble();
         const double y = coordinates[1].GetDouble();
-        coords.push_back(x);
-        coords.push_back(y);
+        coords.push_back({x, y});
     }
     return coords;
 }
