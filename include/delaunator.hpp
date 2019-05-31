@@ -300,7 +300,9 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
         std::swap(i1y, i2y);
     }
 
-    std::tie(m_center_x, m_center_y) = circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
+    std::pair<double, double> aCenter = circumcenter (i0x, i0y, i1x, i1y, i2x, i2y);
+    m_center_x = aCenter.first;
+    m_center_y = aCenter.second;
 
     // sort the points by distance from the seed triangle circumcenter
     std::sort(ids.begin(), ids.end(), compare{ coords, m_center_x, m_center_y });
