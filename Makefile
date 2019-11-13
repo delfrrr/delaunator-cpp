@@ -16,7 +16,7 @@ xcode:
 	mkdir -p ./$(XCODE_PROJ_DIR) && cd ./$(XCODE_PROJ_DIR) && cmake -G Xcode ../
 
 test:
-	@if [ -f ./$(BUILD_DIR)/unit-tests ]; then ./$(BUILD_DIR)/unit-tests; else echo "Please run 'make release' or 'make debug' first" && exit 1; fi
+	@if [ -f ./$(BUILD_DIR)/unit-tests ]; then ./$(BUILD_DIR)/unit-tests; ./$(BUILD_DIR)/header-only-unit-tests; else echo "Please run 'make release' or 'make debug' first" && exit 1; fi
 
 bench:
 	@if [ -f ./$(BUILD_DIR)/bench-tests ]; then ./$(BUILD_DIR)/bench-tests; else echo "Please run 'make release' or 'make debug' first" && exit 1; fi

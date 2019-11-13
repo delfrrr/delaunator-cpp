@@ -47,11 +47,16 @@ include_directories(SYSTEM ${MASON_PACKAGE_benchmark_INCLUDE_DIRS})
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
 file(GLOB TEST_SOURCES test/*.cpp)
+set(TEST_SOURCES ${TEST_SOURCES} include/delaunator.cpp)
 add_executable(unit-tests ${TEST_SOURCES})
+
+file(GLOB TEST_SOURCES test-header-only/*.cpp)
+add_executable(header-only-unit-tests ${TEST_SOURCES})
 
 # libbenchmark.a supports threads and therefore needs pthread support
 find_package(Threads REQUIRED)
 file(GLOB BENCH_SOURCES bench/*.cpp)
+set(BENCH_SOURCES ${BENCH_SOURCES} include/delaunator.cpp)
 add_executable(bench-tests ${BENCH_SOURCES})
 if(BENCHMARK_BIG_O)
     message("-- BENCHMARK_BIG_O=1")
@@ -67,8 +72,8 @@ if(BENCHMARK_10M)
 endif()
 
 #examples
-add_executable(triangulate-geojson examples/triangulate_geojson.cpp)
-add_executable(basic examples/basic.cpp)
+add_executable(triangulate-geojson examples/triangulate_geojson.cpp include/delaunator.cpp)
+add_executable(basic examples/basic.cpp include/delaunator.cpp)
 
 
 # link benchmark static library to the bench-tests binary so the bench tests know where to find the benchmark impl code
