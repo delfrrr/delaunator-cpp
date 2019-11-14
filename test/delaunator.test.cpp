@@ -8,6 +8,9 @@ namespace {
 
 //constexpr double EPSILON = std::numeric_limits<double>::epsilon();
 
+// ABELL - This isn't a sufficient test.  We need to verify against known
+//  good results.  We should at least make sure we're getting the right
+//  number of triangles out.
 inline void validate(const std::vector<double>& coords) {
     delaunator::Delaunator d(coords);
 
