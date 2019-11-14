@@ -93,19 +93,34 @@ inline std::pair<double, double> circumcenter(
     return std::make_pair(x, y);
 }
 
+
 struct compare {
 
     std::vector<double> const& coords;
-    double cx;
-    double cy;
+    std::vector<double> dists;
 
-    bool operator()(std::size_t i, std::size_t j) {
-        const double d1 = dist(coords[2 * i], coords[2 * i + 1], cx, cy);
-        const double d2 = dist(coords[2 * j], coords[2 * j + 1], cx, cy);
-        const double diff1 = d1 - d2;
+    compare(std::vector<double> const& coords,
+        double center_x, double center_y) : coords(coords)
+    {
+        size_t n = coords.size() / 2;
+        dists.reserve(n);
+        double const *xcoord = coords.data();
+        double const *ycoord = coords.data() + 1;
+        while (n--)
+        {
+            dists.push_back(dist(*xcoord, *ycoord, center_x, center_y));
+            xcoord += 2;
+            ycoord += 2;
+        }
+    }
+
+    bool operator()(std::size_t i, std::size_t j)
+    {
+        const double diff1 = dists[i] - dists[j];
         const double diff2 = coords[2 * i] - coords[2 * j];
         const double diff3 = coords[2 * i + 1] - coords[2 * j + 1];
 
+        //ABELL - Not sure why we're not just checking != 0 here.
         if (diff1 > 0.0 || diff1 < 0.0) {
             return diff1 < 0;
         } else if (diff2 > 0.0 || diff2 < 0.0) {
@@ -115,6 +130,7 @@ struct compare {
         }
     }
 };
+
 
 inline bool in_circle(
     const double ax,
