@@ -19,7 +19,7 @@ std::vector<double> generate_uniform(std::size_t n) {
 }
 
 void BM_45K_geojson_nodes(benchmark::State& state) {
-    std::string points_str = utils::read_file("./test/test-files/osm-nodes-45331-epsg-3857.geojson");
+    std::string points_str = utils::read_file("./test-files/osm-nodes-45331-epsg-3857.geojson");
     std::vector<double> coords = utils::get_geo_json_points(points_str);
 
     while (state.KeepRunning()) {
