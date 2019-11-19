@@ -4,6 +4,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <iostream>
 
 std::vector<double> generate_uniform(std::size_t n) {
     std::vector<double> coords;
@@ -34,6 +35,48 @@ void BM_uniform(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
+
+class MyFixture : public ::benchmark::Fixture
+{
+public:
+    MyFixture() : vals(generate_uniform(10000000))
+    {
+    }
+
+    virtual void SetUp(::benchmark::State&)
+    {}
+
+    virtual void TearDown(::benchmark::State&)
+    {}
+
+    std::vector<double> vals;
+};
+
+/**
+BENCHMARK_DEFINE_F(MyFixture, minmax)(::benchmark::State&state)
+{
+    std::cerr << "vals size = " << vals.size() << "!\n";
+    double mn = std::numeric_limits<double>::max();
+    double mx = std::numeric_limits<double>::lowest();
+    while (state.KeepRunning())
+    {
+        for (int i = 0; i < 100; ++i)
+        {
+            for (double& v : vals)
+            {
+                mn = std::min(mn, v);
+                mx = std::max(mx, v);
+                if (v < mn)
+                    mn = v;
+                if (v > mx)
+                    mx = v;
+            }
+        }
+    }
+    std::cerr << "MIN/MAX = " << mn << "/" << mx << "!\n";
+}
+BENCHMARK_REGISTER_F(MyFixture, minmax)->Unit(benchmark::kMillisecond);
+**/
 
 BENCHMARK(BM_45K_geojson_nodes)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_uniform)->Arg(2000)->Arg(100000)->Arg(200000)->Arg(500000)->Arg(1000000)->Unit(benchmark::kMillisecond);
