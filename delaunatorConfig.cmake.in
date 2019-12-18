@@ -1,0 +1,5 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/delaunatorTargets.cmake")
+
+set_and_check(delaunator_INCLUDE_DIR "@PACKAGE_INSTALL_INCLUDE_DIR@")
