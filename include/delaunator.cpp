@@ -196,8 +196,8 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
       m_edge_stack() {
     std::size_t n = coords.size() >> 1;
 
-    double max_x = (std::numeric_limits<double>::min)();
-    double max_y = (std::numeric_limits<double>::min)();
+    double max_x = std::numeric_limits<double>::lowest();
+    double max_y = std::numeric_limits<double>::lowest();
     double min_x = (std::numeric_limits<double>::max)();
     double min_y = (std::numeric_limits<double>::max)();
     std::vector<std::size_t> ids;
