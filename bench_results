@@ -1,0 +1,27 @@
+Debug:
+
+Run on (8 X 2600 MHz CPU s)
+2019-11-14 09:43:59
+------------------------------------------------------------
+Benchmark                     Time           CPU Iterations
+------------------------------------------------------------
+BM_45K_geojson_nodes         94 ms         94 ms          7
+BM_uniform/2000               3 ms          3 ms        213
+BM_uniform/100000           232 ms        231 ms          3
+BM_uniform/200000           517 ms        517 ms          1
+BM_uniform/500000          1429 ms       1427 ms          1
+BM_uniform/1000000         3084 ms       3081 ms          1
+
+Release:
+
+Run on (8 X 2600 MHz CPU s)
+2019-11-14 09:46:33
+------------------------------------------------------------
+Benchmark                     Time           CPU Iterations
+------------------------------------------------------------
+BM_45K_geojson_nodes         23 ms         23 ms         31
+BM_uniform/2000               1 ms          1 ms       1010
+BM_uniform/100000            65 ms         64 ms         10
+BM_uniform/200000           158 ms        157 ms          4
+BM_uniform/500000           449 ms        448 ms          2
+BM_uniform/1000000         1075 ms       1074 ms          1
