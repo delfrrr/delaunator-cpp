@@ -22,10 +22,10 @@ bench:
 	@if [ -f ./$(BUILD_DIR)/bench-tests ]; then ./$(BUILD_DIR)/bench-tests; else echo "Please run 'make release' or 'make debug' first" && exit 1; fi
 
 tidy:
-	@echo "not implmented"
+	@echo "not implemented"
 
 coverage:
-	@echo "not implmented"
+	@echo "not implemented"
 
 clean:
 	rm -rf ./$(BUILD_DIR)
